@@ -1,0 +1,46 @@
+.tasks-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 620px;
+    background-color: var(--color-bg);
+    margin-top: 64px;
+}
+
+.greeting {
+    color: var(--color-text-primary);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.tasks-header {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    width: 100%;
+    justify-content: left;  
+    gap: 12px;
+}
+
+.information {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.task-add-input {
+    width: 620px;
+    height: 48px;
+    border-top: 1px solid var(--color-text-secondary);
+    border: none;
+    outline: none;
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Switzer", sans-serif;
+}
+
