@@ -13,6 +13,7 @@ import confetti from "canvas-confetti";
 const Tasks = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
+  const checkboxRefs = useRef({});
 
   const intialTasks = [
     {
@@ -112,11 +113,13 @@ const Tasks = () => {
     const rect = element.getBoundingClientRect();
 
     confetti({
-      particleCount: 5, // small amount
-      spread: 5, // small spread
+      particleCount: 15, // small amount
+      spread: 20, // small spread
+      startVelocity: 9, // lower velocity so they don't go too far
+      ticks: 90, // shorter duration
       origin: {
         x: (rect.left + rect.width / 2) / window.innerWidth,
-        y: (rect.top + rect.height / 2 + 100) / window.innerHeight,
+        y: (rect.top + rect.height / 2 - 20) / window.innerHeight,
       },
       scalar: 0.4, // smaller particles
       zIndex: 9999,
@@ -174,15 +177,17 @@ const Tasks = () => {
       <div className="task-list-container">
         {intialTasks.map((task) => {
           const { time, date } = formatTaskDate(task.due.parsedDate);
+
           return (
             <div key={task.id} className="task-item">
               <div className="task-item-left">
                 <Drag className="drag-handle-icon" />
-                {/* <SquareIcon className="square-icon" /> */}
                 <div
                   className="check-square"
-                  ref={checkboxRef}
-                  onClick={() => launchSmallConfetti(checkboxRef.current)}
+                  ref={(el) => (checkboxRefs.current[task.id] = el)}
+                  onClick={() =>
+                    launchSmallConfetti(checkboxRefs.current[task.id])
+                  }
                 ></div>
                 <p className="task-title">{task.title}</p>
               </div>
