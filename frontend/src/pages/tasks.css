@@ -1,117 +1,110 @@
 .tasks-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 620px;
-    background-color: var(--color-bg);
-    margin-top: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 620px;
+  background-color: var(--color-bg);
+  margin-top: 64px;
 }
 
-
-
 .title-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 
-    width: 100%;
-    gap: 8px;
+  width: 100%;
+  gap: 8px;
 }
 
 .title-icon {
-    width: 30px;
-    margin-top: 1px;
-    color: var(--color-text-primary);
+  width: 30px;
+  margin-top: 1px;
+  color: var(--color-text-primary);
 }
 
 .tasks-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    justify-content: space-between;
-
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
 }
 
 .tasks-header-text {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .title {
-    background: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text; /* For Firefox */
-    color: transparent;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
+  background: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text; /* For Firefox */
+  color: transparent;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.25px;
 }
-
-
 
 .information {
-    color: var(--color-text-secondary);
-    font-size: 16px;
-    font-weight: 500;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  font-weight: 500;
 }
 
-.dots-icon svg{
-    color: var(--color-text-secondary);
-    width: 20px;
-    cursor: pointer;
+.dots-icon svg {
+  color: var(--color-text-secondary);
+  width: 20px;
+  cursor: pointer;
 }
 
 .task-add-input {
-    margin-top: 20px;
-    width: 580px;
-    /* height: 51px; */
-    border: none;
-    outline: none;
-    background-color: var(--color-surface-2);
-    color: var(--color-text-primary);
-    font-size: 15px;
-    border-radius: 12px;
-    font-weight: 500;
-    font-family: "Switzer", sans-serif;
-    padding: 16px 16px 16px 24px;
+  margin-top: 20px;
+  width: 100%;
+  /* height: 51px; */
+  border: none;
+  outline: none;
+  background-color: var(--color-surface-2);
+  color: var(--color-text-primary);
+  font-size: 15px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-family: "Switzer", sans-serif;
+  box-sizing: border-box;
+  padding: 16px 16px 16px 24px;
 }
 
 .task-add-input::placeholder {
-    font-weight: 400;
-    color: var(--color-text-secondary);
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
 .task-input-container {
-    position: relative;
-    width: 620px; /* Match input width */
-
+  position: relative;
+  width: 100%;
 }
 
 .task-add-tooltip {
-    position: absolute;
-    right: 16px;
-    top: 65%;
-    transform: translateY(-50%);
-    background-color: var(--color-border);
-    color: var(--color-text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  position: absolute;
+  right: 16px;
+  top: 65%;
+  transform: translateY(-50%);
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-
-.task-list-container {
+.tasks-list-container {
   margin-top: 16px;
   width: 100%;
   display: flex;
@@ -124,11 +117,11 @@
   justify-content: space-between;
   align-items: center;
   background-color: var(--color-surface);
-
   border-radius: 12px;
-  padding: 15px 16px 15px 6px;
+  padding: 14px 16px 14px 6px;
   color: var(--color-text-primary);
   border: 0.5px solid var(--color-border);
+  box-sizing: border-box;
 }
 
 .task-item-left {
@@ -139,18 +132,64 @@
 }
 
 .drag-handle-icon {
+  margin-bottom: -6px;
   width: 21px;
   height: 21px;
   color: var(--color-border-2); /* Adjust color as needed */
+  cursor: grab;
 }
 
 .check-square {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   border-radius: 4px;
   background-color: var(--color-border);
   margin-top: 2px;
   cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-square.checked {
+  border-radius: 50%;
+  background-color: var(--color-text-primary);
+}
+
+.check-square.checked:hover {
+  background-color: var(--color-text-primary);
+}
+
+.check-square.checked:active {
+  background-color: var(--color-text-secondary);
+}
+
+.check-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-bg);
+  stroke-width: 2;
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: drawCheck 0.4s forwards ease-in-out;
+}
+
+@keyframes drawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.check-square:hover {
+  background-color: var(--color-border-2);
+}
+
+.check-square:hover:active {
+  background-color: var(--color-border);
+  transform: scale(0.95);
 }
 
 .task-title {
@@ -168,47 +207,105 @@
 .task-time {
   font-size: 14px;
   color: var(--color-text-secondary);
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .task-date {
-    display: flex;
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-  font-size: 14px;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
   font-weight: 500;
-  color: var(--color-success); /* Green color for the date, similar to the image */
-  background-color: hsla(165, 82%, 40%, 0.1); /* Slightly darker green background for the date */
-
+  color: var(
+    --color-success
+  ); /* Green color for the date, similar to the image */
+  background-color: hsla(
+    165,
+    82%,
+    40%,
+    0.1
+  ); /* Slightly darker green background for the date */
+  transition: all 0.3s ease-in-out;
   /* padding: 4px 16px; */
-  width: 67px;
-  height: 22px;
+  padding: 2px 10px;
   border-radius: 5px;
 }
 
-
-
-
-
-.completed-task-list {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    margin-top: 24px;
+.task-date-error {
+  color: var(--color-error);
+  background-color: rgba(179, 38, 38, 0.1); /* light red background */
 }
 
-.completed-task-title {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    margin: 0 8px;
+.task-date-warning {
+  color: var(--color-warning);
+  background-color: rgba(173, 119, 30, 0.1); /* light orange background */
 }
 
-.completed-task-line {
-    width: 50%;
-    height: 0.5px;
-    background-color: var(--color-text-secondary);
+.task-date-accent {
+  color: var(--color-accent);
+  background-color: rgba(16, 163, 127, 0.1); /* light green background */
+}
 
+.task-date-completed {
+  color: var(--color-text-secondary);
+  background-color: hsla(0, 0%, 64%, 0.1); /* light green background */
+}
+
+/* .task-time-error {
+  color: var(--color-error);
+  font-weight: 600;
+} */
+
+.task-time-warning {
+  color: var(--color-warning);
+}
+
+/* .task-time-accent {
+  color: var(--color-accent);
+  font-weight: 600;
+} */
+
+.task-time-completed {
+  color: var(--color-text-secondary);
+}
+
+.completed-tasks-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.completed-tasks-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  min-width: max-content;
+  cursor: pointer;
+  margin: 0 12px;
+}
+
+.completed-tasks-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.completed-tasks-line {
+  width: 0;
+  height: 0.5px;
+  background-color: var(--color-text-secondary);
+  transition: width 0.4s ease-in-out;
+}
+
+.line-expand {
+  width: 50%;
+}
+
+.line-hidden {
+  width: 0;
 }
