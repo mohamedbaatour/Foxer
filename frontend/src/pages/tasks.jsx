@@ -20,7 +20,7 @@ import { ReactComponent as Check } from "../icons/check.svg";
 import confetti from "canvas-confetti";
 
 // Sortable Task Item
-function SortableTaskItem({ task, onCheck, dragHandle, ...props }) {
+function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...props }) {
 
   
   const {
@@ -46,8 +46,9 @@ function SortableTaskItem({ task, onCheck, dragHandle, ...props }) {
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.7 : 1,
+        opacity: isDragging && !isOverlay ? 0 : 1,
         zIndex: isDragging ? 2 : 1,
+        
       }}
       className="task-item"
       {...props}
@@ -297,6 +298,7 @@ function DroppableContainer({ id, children }) {
     const movedTask = tasks.find((t) => t.id === activeId);
     setTasks((prev) => prev.filter((t) => t.id !== activeId));
     setCompletedTasks((prev) => [{ ...movedTask, completed: true }, ...prev]);
+    setIsCompletedTasksOpen(true); // Open completed section
   } else if (isActiveInCompleted && isOverInTasks) {
     const movedTask = completedTasks.find((t) => t.id === activeId);
     setCompletedTasks((prev) => prev.filter((t) => t.id !== activeId));
@@ -310,18 +312,18 @@ function DroppableContainer({ id, children }) {
   // Checkbox click handler
   const handleCheck = (task, fromCompleted) => {
     if (!fromCompleted) {
-      // Show checkmark immediately, play confetti, then move to completed (top)
       const el = document.querySelector(
         `.task-item .check-square:not(.checked)[data-id="${task.id}"]`
       ) || document.querySelector(`.task-item .check-square:not(.checked)`);
       if (el) {
-        el.classList.add("checked"); // visually check the box
+        el.classList.add("checked");
         launchSmallConfetti(el);
       }
       setTimeout(() => {
         setTasks((prev) => prev.filter((t) => t.id !== task.id));
         setCompletedTasks((prev) => [{ ...task, completed: true }, ...prev]);
-      }, 700); // 400ms for confetti animation
+        setIsCompletedTasksOpen(true); // Open completed section
+      }, 700);
     } else {
       setCompletedTasks((prev) => prev.filter((t) => t.id !== task.id));
       setTasks((prev) => [...prev, { ...task, completed: false }]);
@@ -435,59 +437,62 @@ function DroppableContainer({ id, children }) {
             ></div>
           </div>
           <AnimatePresence>
-            {isCompletedTasksOpen && (
-              <motion.div
-              style={{ width: "100%" }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <DroppableContainer id="completedTasks">
-                <SortableContext
-                  items={completedTasks.map((t) => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="tasks-list-container">
-                    {completedTasks.map((task) => {
-                      const { time, date } = formatTaskDate(task.due.parsedDate);
-                      const dateClass = getTaskDateClass(task);
-                      const timeClass = getTaskTimeClass(task);
-                      return (
-                        <SortableTaskItem
-                          key={task.id}
-                          task={task}
-                          time={time}
-                          date={date}
-                          dateClass={dateClass}
-                          timeClass={timeClass}
-                          onCheck={() => handleCheck(task, true)}
-                        />
-                      );
-                    })}
-                  </div>
-                </SortableContext>
-                </DroppableContainer>
-                <DragOverlay>
-    {activeId ? (
-      <SortableTaskItem
-        task={
-          tasks.find((t) => t.id === activeId) ||
-          completedTasks.find((t) => t.id === activeId)
-        }
-        time=""
-        date=""
-        dateClass=""
-        timeClass=""
-        onCheck={() => {}}
-      />
-    ) : null}
-  </DragOverlay>
-              </motion.div>
-            )}
-          </AnimatePresence>
+  {isCompletedTasksOpen && (
+    <motion.div
+      style={{ width: "100%" }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.3, delay: 0.1 }}
+    >
+      <DroppableContainer id="completedTasks">
+        <SortableContext
+          items={completedTasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="tasks-list-container">
+            {completedTasks.map(task => {
+              const { time, date } = formatTaskDate(task.due.parsedDate);
+              return (
+                <SortableTaskItem
+                  key={task.id}
+                  task={task}
+                  time={time}
+                  date={date}
+                  dateClass={getTaskDateClass(task)}
+                  timeClass={getTaskTimeClass(task)}
+                  onCheck={() => handleCheck(task, true)}
+                />
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DroppableContainer>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+{/* <-- Move DragOverlay here, outside of the conditional */}
+<DragOverlay>
+  {activeId ? (
+    <SortableTaskItem
+      task={
+        tasks.find(t => t.id === activeId) ||
+        completedTasks.find(t => t.id === activeId)
+      }
+      time=""
+      date=""
+      dateClass=""
+      timeClass=""
+      onCheck={() => {}}
+      isOverlay={true}
+    />
+  ) : null}
+</DragOverlay>
         </div>
       </DndContext>
+
+
     </div>
   );
 };

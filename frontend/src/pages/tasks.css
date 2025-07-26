@@ -112,6 +112,11 @@
   gap: 8px;
 }
 
+.drop-zone-spacer {
+  height: 50px;
+  pointer-events: none;
+}
+
 .task-item {
   display: flex;
   justify-content: space-between;
