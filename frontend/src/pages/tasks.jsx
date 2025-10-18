@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./tasks.css";
-import { AnimatePresence, motion } from "framer-motion";
-import { DndContext, closestCenter, useDroppable, DragOverlay  } from "@dnd-kit/core";
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion";
+import { DndContext, closestCenter, useDroppable, DragOverlay, pointerWithin  } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -9,6 +9,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
+
 
 import { ReactComponent as Sun } from "../icons/sun.svg";
 import { ReactComponent as Moon } from "../icons/moon.svg";
@@ -23,85 +25,78 @@ import Selecto from "react-selecto";
 
 
 // Sortable Task Item
-function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...props }) {
+function SortableTaskItem({ task, onCheck, isOverlay = false,isDraggingGlobal = false, ...props }) {
+const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+  useSortable({
+    id: task.id,
+    transition: null, // no easing on transform
+    animateLayoutChanges: (args) => {
+      // Don’t animate position changes while sorting/dragging
+      const { isSorting, wasDragging } = args;
+      if (isSorting || wasDragging) return false;
+      return defaultAnimateLayoutChanges(args);
+    },
+  });
 
-  
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
 
-  // Local state to show check icon immediately on click
   const [justChecked, setJustChecked] = React.useState(false);
+  useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
 
-  // Reset justChecked if task is removed from list (moved to completed)
-  useEffect(() => {
-    if (!task.completed) setJustChecked(false);
-  }, [task.completed]);
-
-  // compute days-left text for the hover popup (fix off-by-one by comparing date-only)
+  // days-left (unchanged)
   const nowForPopup = new Date();
   const dueForPopup = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
-  let daysLeftText = "";
-  let isLateForPopup = false;
+  let daysLeftText = "", isNearForPopup = false, isLateForPopup = false;
   if (dueForPopup) {
-    // Compare dates at midnight so partial-day times don't add an extra day
     const todayMid = new Date(nowForPopup.getFullYear(), nowForPopup.getMonth(), nowForPopup.getDate());
     const dueMid = new Date(dueForPopup.getFullYear(), dueForPopup.getMonth(), dueForPopup.getDate());
-    const diffDaysPopup = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24));
-
-    if (diffDaysPopup > 1) daysLeftText = `${diffDaysPopup} days left`;
-    else if (diffDaysPopup === 1) daysLeftText = "1 day left";
-    else if (diffDaysPopup === 0) daysLeftText = "Due today";
-    else {
-      isLateForPopup = true;
-      const daysLate = Math.abs(diffDaysPopup);
-      daysLeftText = `${daysLate} day${daysLate === 1 ? "" : "s"} late`;
-    }
+    const d = Math.round((dueMid - todayMid) / (1000*60*60*24));
+    if (d > 1) daysLeftText = `${d} days left`;
+    else if (d === 1) { daysLeftText = "1 day left"; isNearForPopup = true; }
+    else if (d === 0) { daysLeftText = "Due today"; isNearForPopup = true; }
+    else { isLateForPopup = true; const a = Math.abs(d); daysLeftText = `${a} day${a===1?"":"s"} late`; }
   }
 
+const disableLayout = isDraggingGlobal || isDragging || isOverlay;
+
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
+      className="task-item selectable"
+      layout={!disableLayout}
+      layoutId={!disableLayout ? task.id : undefined}
+      transition={!disableLayout ? { type: "spring", stiffness: 700, damping: 50 } : { duration: 0 }}
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging && !isOverlay ? 0 : 1,
         zIndex: isDragging ? 2 : 1,
+        willChange: isDragging ? "transform" : "auto",
       }}
-      className="task-item selectable"
       {...props}
     >
       <div className="task-item-left">
         <span {...listeners} {...attributes} style={{ cursor: "grab" }}>
           <Drag className="drag-handle-icon" />
         </span>
+
         <div
           className={`check-square${task.completed || justChecked ? " checked" : ""}`}
           data-id={task.id}
-          onClick={() => {
-            if (!task.completed) setJustChecked(true);
-            onCheck();
-          }}
+          onClick={() => { if (!task.completed) setJustChecked(true); onCheck(); }}
         >
           {(task.completed || justChecked) && <Check className="check-icon" />}
         </div>
+
         <p className="task-title">{task.title}</p>
       </div>
+
       <div className="task-item-right">
         <span className={`task-time ${props.timeClass}`}>{props.time}</span>
-
-        {/* Date + hover popup */}
         <div className="task-date-wrapper">
           <span className={`task-date ${props.dateClass}`}>{props.date}</span>
-          {/* don't show popup for completed tasks */}
-                    {dueForPopup && !task.completed && (
+          {dueForPopup && !task.completed && (
             <div
-              className={`task-date-popup${isLateForPopup ? " late" : ""}`}
+              className={`task-date-popup${isLateForPopup ? " late" : ""} ${isNearForPopup ? " near" : ""}`}
               role="tooltip"
               aria-hidden={isOverlay ? "true" : "false"}
             >
@@ -110,22 +105,24 @@ function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...pro
           )}
         </div>
 
-        <div 
+        <div
           className="task-dots-container"
-          onPointerDownCapture={(e) => { e.stopPropagation(); e.preventDefault(); }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onTouchStartCapture={(e) => { e.stopPropagation(); e.preventDefault(); }}
-          onTouchStart={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
+          onPointerDownCapture={e => { e.stopPropagation(); e.preventDefault(); }}
+          onPointerDown={e => e.stopPropagation()}
+          onTouchStartCapture={e => { e.stopPropagation(); e.preventDefault(); }}
+          onTouchStart={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           <span className="task-dots" role="button" tabIndex={0} aria-label="Task actions">
             <Dots />
           </span>
         </div>
-      </div>  
-    </div>
+      </div>
+    </motion.div>
   );
 }
+
+
   
 const Tasks = () => {
 
@@ -146,6 +143,8 @@ function DroppableContainer({ id, children }) {
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
+
+  
 
   const defaultTasks = [
     {
@@ -168,7 +167,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-18T17:00:00Z",
+        parsedDate: "2025-10-19T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -288,21 +287,25 @@ function DroppableContainer({ id, children }) {
     });
   };
 
-  const getTaskDateClass = (task) => {
-    if (task.completed) return "task-date-completed";
-    const now = new Date();
-    const dueDate = new Date(task.due.parsedDate);
-    const diffMs = dueDate - now;
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+const getTaskDateClass = (task) => {
+  if (task.completed) return "task-date-completed";
 
-    if (diffDays < 1) {
-      return "task-date-error";
-    } else if (diffDays < 3) {
-      return "task-date-warning";
-    } else {
-      return "task-date-accent";
-    }
-  };
+  const now = new Date();
+  const dueDate = new Date(task.due.parsedDate);
+  const diffMs = dueDate - now;
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+  if (diffDays < 0) {
+    // Overdue
+    return "task-date-error";
+  } else if (diffDays < 1) {
+    // Due soon (within 24h)
+    return "task-date-warning";
+  } else {
+    // Future
+    return "task-date-accent";
+  }
+};
 
   const getTaskTimeClass = (task) => {
     if (task.completed) return "task-time-completed";
@@ -318,7 +321,7 @@ function DroppableContainer({ id, children }) {
     }
   };
 
-  const [isCompletedTasksOpen, setIsCompletedTasksOpen] = useState(false);
+  const [isCompletedTasksOpen, setIsCompletedTasksOpen] = useState(true);
 
   const toggleCompletedTasks = () => {
     setIsCompletedTasksOpen(!isCompletedTasksOpen);
@@ -380,25 +383,22 @@ function DroppableContainer({ id, children }) {
 
 
   // Checkbox click handler
-  const handleCheck = (task, fromCompleted) => {
-    if (!fromCompleted) {
-      const el = document.querySelector(
-        `.task-item .check-square:not(.checked)[data-id="${task.id}"]`
-      ) || document.querySelector(`.task-item .check-square:not(.checked)`);
-      if (el) {
-        el.classList.add("checked");
-        launchSmallConfetti(el);
-      }
-      setTimeout(() => {
-        setTasks((prev) => prev.filter((t) => t.id !== task.id));
-        setCompletedTasks((prev) => [{ ...task, completed: true }, ...prev]);
-        setIsCompletedTasksOpen(true); // Open completed section
-      }, 700);
-    } else {
-      setCompletedTasks((prev) => prev.filter((t) => t.id !== task.id));
-      setTasks((prev) => [...prev, { ...task, completed: false }]);
-    }
-  };
+const handleCheck = (task, fromCompleted) => {
+  if (!fromCompleted) {
+    const el = document.querySelector(`.check-square[data-id="${task.id}"]`);
+    if (el) { el.classList.add("checked"); launchSmallConfetti(el); }
+
+    // small delay so the check stroke begins before move; keep it short
+    setTimeout(() => {
+      setTasks(prev => prev.filter(t => t.id !== task.id));
+      setCompletedTasks(prev => [{ ...task, completed: true }, ...prev]);
+      setIsCompletedTasksOpen(true);
+    }, 140);
+  } else {
+    setCompletedTasks(prev => prev.filter(t => t.id !== task.id));
+    setTasks(prev => [...prev, { ...task, completed: false }]);
+  }
+};
   
   // ...existing code...
 
@@ -514,8 +514,11 @@ function DroppableContainer({ id, children }) {
         ></input>
         <div className="task-add-tooltip">A</div>
       </div>
+      <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>
+      <LayoutGroup id="lists" layout>  {/* <— NEW */}
       <DndContext
-        collisionDetection={closestCenter}
+        // collisionDetection={closestCenter}
+        collisionDetection={pointerWithin} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
@@ -539,6 +542,7 @@ function DroppableContainer({ id, children }) {
                   dateClass={dateClass}
                   timeClass={timeClass}
                   onCheck={() => handleCheck(task, false)}
+                  isDraggingGlobal={isDragging}
                 />
               );
             })}
@@ -592,6 +596,7 @@ function DroppableContainer({ id, children }) {
                   dateClass={getTaskDateClass(task)}
                   timeClass={getTaskTimeClass(task)}
                   onCheck={() => handleCheck(task, true)}
+                  isDraggingGlobal={isDragging}
                 />
               );
             })}
@@ -603,7 +608,7 @@ function DroppableContainer({ id, children }) {
 </AnimatePresence>
 
 {/* <-- Move DragOverlay here, outside of the conditional */}
-<DragOverlay>
+<DragOverlay dropAnimation={null}>
   {activeId ? (() => {
     const activeTask =
       tasks.find((t) => t.id === activeId) ||
@@ -612,7 +617,7 @@ function DroppableContainer({ id, children }) {
     const { time, date } = formatTaskDate(activeTask.due?.parsedDate);
     const dateClass = getTaskDateClass(activeTask);
     const timeClass = getTaskTimeClass(activeTask);
-    return (
+    return (  
       <SortableTaskItem
         task={activeTask}
         time={time}
@@ -627,6 +632,8 @@ function DroppableContainer({ id, children }) {
 </DragOverlay>
         </div>
       </DndContext>
+            </LayoutGroup>
+            </MotionConfig>
 
 </div>
 {!isDragging && (

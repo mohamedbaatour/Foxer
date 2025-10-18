@@ -41,7 +41,7 @@
 
 body {
   background-color: var(--color-bg);
-  color: var(--color-text-primary);
+  color: var(--color-text-primary); 
   margin: 0;
   padding: 0;
   font-family: "Switzer", sans-serif;

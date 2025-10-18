@@ -137,6 +137,8 @@
   transition: background-color 0.3s ease-in-out;
 }
 
+.task-item { will-change: transform; }
+
 .task-item:hover {
   background-color: var(--color-surface-2);
 }
@@ -264,6 +266,11 @@
 /* ...existing code... */
 
 .task-date-popup.late {
+  color: var(--color-error);
+  
+}
+
+.task-date-popup.near {
   color: var(--color-warning);
 }
 
@@ -362,10 +369,38 @@
   border-radius: 5px;
 }
 
+
+
 .task-date-error {
   color: var(--color-error);
-  background-color: rgba(179, 38, 38, 0.1); /* light red background */
+  background-color: rgba(179, 38, 38, 0.1);
+  animation: pulse-twice 1.6s ease-out 0.6s;
 }
+
+@keyframes pulse-twice {
+  0% {
+    background-color: rgba(179, 38, 38, 0.1);
+    box-shadow: 0 0 0 0 rgba(179, 38, 38, 0.4);
+  }
+  20% {
+    background-color: rgba(179, 38, 38, 0.25);
+    box-shadow: 0 0 0 6px rgba(179, 38, 38, 0);
+  }
+  30% {
+    background-color: rgba(179, 38, 38, 0.1);
+    box-shadow: 0 0 0 0 rgba(179, 38, 38, 0);
+  }
+  60% {
+    background-color: rgba(179, 38, 38, 0.25);
+    box-shadow: 0 0 0 6px rgba(179, 38, 38, 0);
+  }
+  100% {
+    background-color: rgba(179, 38, 38, 0.1);
+    box-shadow: 0 0 0 0 rgba(179, 38, 38, 0);
+  }
+
+}
+
 
 .task-date-warning {
   color: var(--color-warning);
@@ -388,7 +423,7 @@
 } */
 
 .task-time-warning {
-  color: var(--color-warning);
+  color: var(--color-text-secondary);
 }
 
 /* .task-time-accent {
