@@ -19,6 +19,9 @@ import { ReactComponent as Check } from "../icons/check.svg";
 
 import confetti from "canvas-confetti";
 
+import Selecto from "react-selecto";
+
+
 // Sortable Task Item
 function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...props }) {
 
@@ -40,6 +43,27 @@ function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...pro
     if (!task.completed) setJustChecked(false);
   }, [task.completed]);
 
+  // compute days-left text for the hover popup (fix off-by-one by comparing date-only)
+  const nowForPopup = new Date();
+  const dueForPopup = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
+  let daysLeftText = "";
+  let isLateForPopup = false;
+  if (dueForPopup) {
+    // Compare dates at midnight so partial-day times don't add an extra day
+    const todayMid = new Date(nowForPopup.getFullYear(), nowForPopup.getMonth(), nowForPopup.getDate());
+    const dueMid = new Date(dueForPopup.getFullYear(), dueForPopup.getMonth(), dueForPopup.getDate());
+    const diffDaysPopup = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24));
+
+    if (diffDaysPopup > 1) daysLeftText = `${diffDaysPopup} days left`;
+    else if (diffDaysPopup === 1) daysLeftText = "1 day left";
+    else if (diffDaysPopup === 0) daysLeftText = "Due today";
+    else {
+      isLateForPopup = true;
+      const daysLate = Math.abs(diffDaysPopup);
+      daysLeftText = `${daysLate} day${daysLate === 1 ? "" : "s"} late`;
+    }
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -48,9 +72,8 @@ function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...pro
         transition,
         opacity: isDragging && !isOverlay ? 0 : 1,
         zIndex: isDragging ? 2 : 1,
-        
       }}
-      className="task-item"
+      className="task-item selectable"
       {...props}
     >
       <div className="task-item-left">
@@ -58,9 +81,7 @@ function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...pro
           <Drag className="drag-handle-icon" />
         </span>
         <div
-          className={`check-square${
-            task.completed || justChecked ? " checked" : ""
-          }`}
+          className={`check-square${task.completed || justChecked ? " checked" : ""}`}
           data-id={task.id}
           onClick={() => {
             if (!task.completed) setJustChecked(true);
@@ -73,12 +94,39 @@ function SortableTaskItem({ task, onCheck, dragHandle, isOverlay = false, ...pro
       </div>
       <div className="task-item-right">
         <span className={`task-time ${props.timeClass}`}>{props.time}</span>
-        <span className={`task-date ${props.dateClass}`}>{props.date}</span>
-      </div>
+
+        {/* Date + hover popup */}
+        <div className="task-date-wrapper">
+          <span className={`task-date ${props.dateClass}`}>{props.date}</span>
+          {/* don't show popup for completed tasks */}
+                    {dueForPopup && !task.completed && (
+            <div
+              className={`task-date-popup${isLateForPopup ? " late" : ""}`}
+              role="tooltip"
+              aria-hidden={isOverlay ? "true" : "false"}
+            >
+              {daysLeftText}
+            </div>
+          )}
+        </div>
+
+        <div 
+          className="task-dots-container"
+          onPointerDownCapture={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStartCapture={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="task-dots" role="button" tabIndex={0} aria-label="Task actions">
+            <Dots />
+          </span>
+        </div>
+      </div>  
     </div>
   );
 }
-
+  
 const Tasks = () => {
 
 
@@ -104,10 +152,10 @@ function DroppableContainer({ id, children }) {
       id: "1",
       title: "Go shopping",
       createdAt: "2025-07-23T21:30:00Z",
-      updatedAt: "2025-07-23T21:45:00Z",
+      updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-08-04T14:00:00Z",
+        parsedDate: "2025-10-17T14:00:00Z",
       },
       completed: false,
       focused: false,
@@ -116,11 +164,11 @@ function DroppableContainer({ id, children }) {
     {
       id: "2",
       title: "Clean the house",
-      createdAt: "2025-07-23T21:30:00Z",
-      updatedAt: "2025-07-23T21:45:00Z",
+      createdAt: "2025-10-23T21:30:00Z",
+      updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-07-24T17:00:00Z",
+        parsedDate: "2025-10-18T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -128,12 +176,25 @@ function DroppableContainer({ id, children }) {
     },
     {
       id: "3",
-      title: "Go to the gym",
-      createdAt: "2025-07-23T21:30:00Z",
-      updatedAt: "2025-07-23T21:45:00Z",
+      title: "Go to the GYM",
+      createdAt: "2025-10-23T21:30:00Z",
+      updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-07-24T17:00:00Z",
+        parsedDate: "2025-10-20T17:00:00Z",
+      },
+      completed: false,
+      focused: false,
+      deleted: false,
+    },
+    {
+      id: "4",
+      title: "Play video games",
+      createdAt: "2025-10-23T21:30:00Z",
+      updatedAt: "2025-10-23T21:45:00Z",
+      due: {
+        originalInput: "tomorrow 5pm",
+        parsedDate: "2025-10-23T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -266,13 +327,20 @@ function DroppableContainer({ id, children }) {
   // DnDKit logic
   const [activeId, setActiveId] = useState(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+
   function handleDragStart(event) {
     setActiveId(event.active.id);
+  setIsDragging(true);
   }
 
   function handleDragEnd(event) {
   const { active, over } = event;
-  if (!over) return;
+  if (!over) {
+    setActiveId(null);
+    setIsDragging(false); 
+    return;
+  }
 
   const activeId = active.id;
   const overId = over.id;
@@ -306,7 +374,9 @@ function DroppableContainer({ id, children }) {
   }
 
   setActiveId(null);
+    setIsDragging(false);
 }
+
 
 
   // Checkbox click handler
@@ -329,9 +399,69 @@ function DroppableContainer({ id, children }) {
       setTasks((prev) => [...prev, { ...task, completed: false }]);
     }
   };
+  
+  // ...existing code...
+
+  // Add this style to block pointer events on .selectable while dragging
+  useEffect(() => {
+    const styleId = "selecto-disable-pointer";
+    let styleTag = document.getElementById(styleId);
+
+    if (isDragging) {
+      if (!styleTag) {
+        styleTag = document.createElement("style");
+        styleTag.id = styleId;
+        // Block pointer events on .selectable and .selecto-selection
+        styleTag.innerHTML = `
+          .selectable, .selecto-selection {
+            pointer-events: none !important;
+          }
+        `;
+        document.head.appendChild(styleTag);
+      }
+    } else {
+      if (styleTag) {
+        styleTag.remove();
+      }
+    }
+    return () => {
+      if (styleTag) styleTag.remove();
+    };
+  }, [isDragging]);
+
+    const selectoRef = useRef(null);
+
+// useEffect(() => {
+//   function handleClickOutside(e) {
+//     // if click is truly outside both your items and the selecto UI:
+//     if (
+//       !e.target.closest(".task-item") &&
+//       !e.target.closest(".selecto-selection") &&
+//       !e.target.closest(".selecto-area")
+//     ) {
+//       // 1) clear your CSS classes
+//       document
+//         .querySelectorAll(".task-item.selected")
+//         .forEach(el => el.classList.remove("selected"));
+
+//       // 2) and _also_ tell Selecto to forget everything:
+//       if (selectoRef.current) {
+//         // this will reset its internal selected-targets array
+//         selectoRef.current.setSelectedTargets([]);
+//       }
+//     }
+//   }
+
+//   document.addEventListener("click", handleClickOutside);
+//   return () => {
+//     document.removeEventListener("click", handleClickOutside);
+//   };
+// }, []);
+
 
   return (
     <div className="tasks-container">
+      <div style={{width: "620px"}} className="tasks-subcontainer">
       <div className="tasks-header">
         <div className="tasks-header-text">
           <motion.div
@@ -474,25 +604,58 @@ function DroppableContainer({ id, children }) {
 
 {/* <-- Move DragOverlay here, outside of the conditional */}
 <DragOverlay>
-  {activeId ? (
-    <SortableTaskItem
-      task={
-        tasks.find(t => t.id === activeId) ||
-        completedTasks.find(t => t.id === activeId)
-      }
-      time=""
-      date=""
-      dateClass=""
-      timeClass=""
-      onCheck={() => {}}
-      isOverlay={true}
-    />
-  ) : null}
+  {activeId ? (() => {
+    const activeTask =
+      tasks.find((t) => t.id === activeId) ||
+      completedTasks.find((t) => t.id === activeId);
+    if (!activeTask) return null;
+    const { time, date } = formatTaskDate(activeTask.due?.parsedDate);
+    const dateClass = getTaskDateClass(activeTask);
+    const timeClass = getTaskTimeClass(activeTask);
+    return (
+      <SortableTaskItem
+        task={activeTask}
+        time={time}
+        date={date}
+        dateClass={dateClass}
+        timeClass={timeClass}
+        onCheck={() => {}}
+        isOverlay={true}
+      />
+    );
+  })() : null}
 </DragOverlay>
         </div>
       </DndContext>
 
-
+</div>
+{!isDragging && (
+  <Selecto
+    key="selecto"
+    ref={selectoRef}
+    container={document.body}
+    selectableTargets={[".selectable"]}
+    hitRate={0}
+    selectByClick={true} // <-- Prevent selection on click
+    selectFromInside  
+    continueSelect={true}
+    toggleContinueSelect={"shift"}
+    ratio={0}
+    selectable={true}
+    
+    onSelect={e => {
+      e.added.forEach(el => el.classList.add("selected"));
+      e.removed.forEach(el => el.classList.remove("selected"));
+    }}
+    onSelectEnd={e => {
+      if (e.selected.length === 0) {
+        document.querySelectorAll(".task-item.selected").forEach((el) => {
+          el.classList.remove("selected");
+        });
+      }
+    }}
+  />
+)}
     </div>
   );
 };

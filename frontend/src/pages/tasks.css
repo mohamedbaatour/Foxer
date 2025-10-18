@@ -4,9 +4,16 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 620px;
+
   background-color: var(--color-bg);
   margin-top: 64px;
+   user-select: none;       
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+           /* Or however tall your scroll area is */
+
+  position: relative;
 }
 
 .title-container {
@@ -127,6 +134,22 @@
   color: var(--color-text-primary);
   border: 0.5px solid var(--color-border);
   box-sizing: border-box;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.task-item:hover {
+  background-color: var(--color-surface-2);
+}
+
+.task-item.selected {
+  background-color: var(--color-surface-3);
+}
+
+.rCS179bs95 {
+  border: 1px solid var(--color-border-2) !important; /* Change border color */
+  background: hsla(0, 0%, 100%, 0.103) !important; /* Change fill color */
+  border-radius: 8px !important; /* Change border radius */
+  backdrop-filter: blur(1px);
 }
 
 .task-item-left {
@@ -160,8 +183,8 @@
 }
 
 .check-square.checked {
-  border-radius: 50%;
-  background-color: var(--color-text-primary);
+  border-radius: 50% !important;
+  background-color: var(--color-text-primary) !important;
 }
 
 .check-square.checked:hover {
@@ -207,7 +230,109 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
+
+/* wrapper to position the popup */
+.task-date-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* popup shown on hover above the date */
+.task-date-popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  border: 0.5px solid var(--color-border);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  z-index: 10;
+}
+
+/* ...existing code... */
+
+.task-date-popup.late {
+  color: var(--color-warning);
+}
+
+/* ...existing code... */
+
+/* show popup when hovering the wrapper (works for keyboard focus if needed too) */
+.task-date-wrapper:hover .task-date-popup,
+.task-date-wrapper:focus-within .task-date-popup {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* small arrow */
+/* .task-date-popup::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--color-surface-2);
+  border-left: 0.5px solid var(--color-border);
+  border-bottom: 0.5px solid var(--color-border);
+  transform-origin: center;
+  rotate: 45deg;
+  margin-top: -4px;
+  z-index: -1;
+} */
+
+.task-dots-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+
+  border-radius: 8px;
+  transition: background 0.2s;
+  background: transparent;
+}
+
+.task-dots-container:hover {
+  background: var(--color-surface-3);
+}
+
+.task-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+
+  margin-left: 0; /* Remove if you want no extra space */
+  cursor: pointer;
+}
+
+/* .task-item:hover .task-dots {
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+} */
+
+/* .task-item:hover .task-dots {
+  opacity: 1;
+} */
+
 
 .task-time {
   font-size: 14px;
@@ -314,3 +439,5 @@
 .line-hidden {
   width: 0;
 }
+
+
