@@ -25,29 +25,122 @@
     --color-surface-3: #2a2a2c;
     --color-border: #2f2f31;
     --color-border-2: #3a3a3c;
-    --color-text-primary: #f4f4f5;
+    --color-text-primary: #f9f9f9;
     --color-text-secondary: #a1a1aa;
     --color-text-muted: #71717a;
-    --color-accent: #00d9a3;
+    --color-accent: #31caa4;
     --color-accent-hover: #00b88c;
-    --color-error: #f74a41;
-    --color-warning: #f7cd50;
+    --color-error: #d65751;
+    --color-warning: #dab751;
     --color-success: #22c55e;
-    --color-focus-ring: #00b88c33;
+    /* --color-focus-ring: #00b88c33; */
+
+    --mood-yellow: rgba(247, 236, 80, 0.012);  /* near */
+    --mood-red:  rgba(247, 74, 65, 0.012); /* overdue */
+    --mood-green: rgba(0, 255, 149, 0.025); /* completed */
   }
 }
 
+/* sits behind your app, above the base gradient + radial */
+#mood-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0; /* keep your app at z-index:1 */
+}
 
+/* each buffer holds a gradient using its own --mood-color */
+#mood-layer .mood {
+  position: absolute;
+  inset: 0;
+  opacity: 0;                       /* hidden by default */
+  transition: opacity 420ms ease;   /* smooth in/out */
+  background: linear-gradient(
+    to bottom,
+    var(--mood-color, transparent) 0%,
+    transparent 42%
+  );
+}
+
+/* keep your existing: */
+.tasks-container { position: relative; z-index: 1; }
+
+
+/* base stays the same */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,200,150,0.02), transparent 70%) no-repeat;
+  background-size: cover;
+  pointer-events: none;
+  z-index: 0;
+}
 
 body {
-  background-color: var(--color-bg);
-  color: var(--color-text-primary); 
+  background: linear-gradient(to bottom, #1b120c 0%, #0b0b0c 35%, #0b0b0c 100%) no-repeat fixed;
+  background-size: cover;
+  color: var(--color-text-primary);
   margin: 0;
   padding: 0;
   font-family: "Switzer", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.6s ease;
+  min-height: 100vh;
+  position: relative;
 }
+
+/* mood tokens — **subtle** */
+
+/* default: no tint */
+:root { --mood-top: transparent; }
+
+/* overlay that tints the top a little — sits behind content */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0; /* content above */
+  opacity: 0; /* off by default */
+  will-change: opacity;
+  transition: opacity 420ms ease;
+  background: linear-gradient(to bottom, var(--mood-top) 0%, transparent 42%);
+}
+
+/* when any mood is active, fade the overlay in */
+body[data-mood]::after { opacity: 1; }
+
+/* ensure your app is above the overlays */
+.tasks-container { position: relative; z-index: 1; }
+
+:root {
+  --mood-top: #1b120c;        /* default brown */
+}
+
+body {
+  position: relative;
+}
+
+/* crossfading overlay; we only change --mood-top + opacity */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 480ms ease;
+  background: linear-gradient(to bottom, var(--mood-top) 0%, transparent 40%);
+}
+
+/* when a mood is active, fade overlay in */
+body[data-mood]::after {
+  opacity: 1;
+}
+
+
 
 ::selection {
   background-color: var(--color-text-secondary);

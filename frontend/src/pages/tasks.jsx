@@ -144,7 +144,7 @@ function DroppableContainer({ id, children }) {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
 
-  
+
 
   const defaultTasks = [
     {
@@ -258,15 +258,32 @@ function DroppableContainer({ id, children }) {
   };
 
   const formatTaskDate = (dateString) => {
+    if (!dateString) return { time: "", date: "" };
     const date = new Date(dateString);
     const time = date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
     });
-    const day = date.getDate();
-    const month = date.toLocaleString("en-US", { month: "short" });
-    return { time, date: `${day} ${month}` };
+
+    // compare only year/month/day to get day-diff
+    const today = new Date();
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateMid = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.round((dateMid - todayMid) / (1000 * 60 * 60 * 24));
+
+    let dateLabel;
+    if (diffDays === 0) {
+      dateLabel = "Today";
+    } else if (diffDays === 1) {
+      dateLabel = "Tomorrow";
+    } else {
+      const day = date.getDate();
+      const month = date.toLocaleString("en-US", { month: "short" });
+      dateLabel = `${day} ${month}`;
+    }
+
+    return { time, date: dateLabel };
   };
 
   const launchSmallConfetti = (element) => {
@@ -293,7 +310,7 @@ const getTaskDateClass = (task) => {
   const now = new Date();
   const dueDate = new Date(task.due.parsedDate);
   const diffMs = dueDate - now;
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = diffMs / (1000 * 60 * 60 * 48);
 
   if (diffDays < 0) {
     // Overdue
@@ -385,6 +402,7 @@ const getTaskDateClass = (task) => {
   // Checkbox click handler
 const handleCheck = (task, fromCompleted) => {
   if (!fromCompleted) {
+    setIsCompletedTasksOpen(true);
     const el = document.querySelector(`.check-square[data-id="${task.id}"]`);
     if (el) { el.classList.add("checked"); launchSmallConfetti(el); }
 
@@ -458,6 +476,90 @@ const handleCheck = (task, fromCompleted) => {
 //   };
 // }, []);
 
+  const todaysCount = tasks.filter(
+    (task) =>
+      new Date(task.due.parsedDate).toDateString() ===
+        new Date().toDateString() && !task.completed
+  ).length;
+
+
+
+const currentMoodRef = React.useRef(null);
+const activeBufRef   = React.useRef('a');
+const clearTimerRef  = React.useRef(null);
+const FADE_MS = 420;
+
+const moodColorMap = {
+  warning: 'rgba(247, 236, 80, 0.04)',  // softer yellow
+  error:   'rgba(247,  74, 65, 0.035)', // softer red
+  success: 'rgba(  0, 255,149, 0.045)', // softer green/teal
+};
+
+const setBgMood = (mood) => {
+  if (clearTimerRef.current) {
+    clearTimeout(clearTimerRef.current);
+    clearTimerRef.current = null;
+  }
+
+  const layer = document.getElementById('mood-layer');
+  if (!layer) return;
+
+  const bufA = layer.querySelector('.mood-a');
+  const bufB = layer.querySelector('.mood-b');
+  const active  = activeBufRef.current === 'a' ? bufA : bufB;
+  const idle    = activeBufRef.current === 'a' ? bufB : bufA;
+
+  if (!mood) {
+    // Fade out current active overlay smoothly
+    active.style.opacity = '0';
+    currentMoodRef.current = null;
+    return;
+  }
+
+  if (currentMoodRef.current === mood) return; // no change
+
+  // Prepare idle buffer with the new color, fade it in, fade the old out
+  idle.style.setProperty('--mood-color', moodColorMap[mood] || 'transparent');
+  idle.style.opacity = '1';
+  active.style.opacity = '0';
+
+  // swap buffers
+  activeBufRef.current = activeBufRef.current === 'a' ? 'b' : 'a';
+  currentMoodRef.current = mood;
+};
+
+const moodFromDateClass = (cls, task) => {
+  if (!cls || task?.completed) return null;     // don't tint completed/unknown
+  if (cls.includes('task-date-error'))   return 'error';    // overdue → red
+  if (cls.includes('task-date-warning')) return 'warning';  // today/tomorrow → yellow
+  if (cls.includes('task-date-accent'))  return 'success';  // future → green
+  return null;
+};
+
+
+// Create #mood-layer with two buffers once
+useEffect(() => {
+  if (document.getElementById('mood-layer')) return;
+
+  const layer = document.createElement('div');
+  layer.id = 'mood-layer';
+
+  const a = document.createElement('div');
+  a.className = 'mood mood-a';
+
+  const b = document.createElement('div');
+  b.className = 'mood mood-b';
+
+  layer.appendChild(a);
+  layer.appendChild(b);
+  document.body.appendChild(layer);
+
+  return () => {
+    layer.remove();
+  };
+}, []);
+
+
 
   return (
     <div className="tasks-container">
@@ -481,16 +583,12 @@ const handleCheck = (task, fromCompleted) => {
             transition={{ duration: 0.4, delay: 0.5 }}
             className="information"
           >
-            It's {new Date().toLocaleString("en-US", { month: "long" })}{" "}
+            It's {new Date().toLocaleString("en-US", { month: "short" })}{" "}
             {new Date().getDate()}. You have {tasks.length} tasks in total,{" "}
-            {
-              tasks.filter(
-                (task) =>
-                  new Date(task.due.parsedDate).toDateString() ===
-                    new Date().toDateString() && !task.completed
-              ).length
-            }{" "}
-            today.
+            <span className={todaysCount > 0 ? "today-count" : ""}>
+              {todaysCount} today
+            </span>
+            .
           </motion.p>
         </div>
 
@@ -530,22 +628,26 @@ const handleCheck = (task, fromCompleted) => {
         >
           <div className="tasks-list-container">
             {tasks.map((task) => {
-              const { time, date } = formatTaskDate(task.due.parsedDate);
-              const dateClass = getTaskDateClass(task);
-              const timeClass = getTaskTimeClass(task);
-              return (
-                <SortableTaskItem
-                  key={task.id}
-                  task={task}
-                  time={time}
-                  date={date}
-                  dateClass={dateClass}
-                  timeClass={timeClass}
-                  onCheck={() => handleCheck(task, false)}
-                  isDraggingGlobal={isDragging}
-                />
-              );
-            })}
+  const { time, date } = formatTaskDate(task.due.parsedDate);
+  const dateClass = getTaskDateClass(task);
+  const timeClass = getTaskTimeClass(task);
+
+  return (
+    <SortableTaskItem
+      key={task.id}
+      task={task}
+      time={time}
+      date={date}
+      dateClass={dateClass}
+      timeClass={timeClass}
+      onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass))}
+      onMouseLeave={() => setBgMood(null)}
+      onCheck={() => handleCheck(task, false)}
+      isDraggingGlobal={isDragging}
+    />
+  );
+})}
+
           </div>
         </SortableContext>
         </DroppableContainer>
