@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./tasks.css";
 import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion";
-import { DndContext, closestCenter, useDroppable, DragOverlay, pointerWithin  } from "@dnd-kit/core";
+import { DndContext, useDroppable, DragOverlay, pointerWithin  } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -18,58 +18,98 @@ import { ReactComponent as Sunrise } from "../icons/sunrise.svg";
 import { ReactComponent as Dots } from "../icons/dots.svg";
 import { ReactComponent as Drag } from "../icons/drag.svg";
 import { ReactComponent as Check } from "../icons/check.svg";
+import {ReactComponent as Edit } from "../icons/edit.svg";
+import {ReactComponent as Duplicate } from "../icons/duplicate.svg";
+import {ReactComponent as Delete } from "../icons/delete.svg";
 
 import confetti from "canvas-confetti";
 
 import Selecto from "react-selecto";
 
+const CLOSE_ALL_EVENT = "task-dots-close-all";
+
+const menuVariants = {
+  open:   { opacity: 1, scale: 1, y: 0,   transition: { duration: 0.18 } },
+  closed: { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.18 } },
+};
 
 // Sortable Task Item
-function SortableTaskItem({ task, onCheck, isOverlay = false,isDraggingGlobal = false, ...props }) {
-const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-  useSortable({
-    id: task.id,
-    transition: null, // no easing on transform
-    animateLayoutChanges: (args) => {
-      // Don’t animate position changes while sorting/dragging
-      const { isSorting, wasDragging } = args;
-      if (isSorting || wasDragging) return false;
-      return defaultAnimateLayoutChanges(args);
-    },
-  });
-
+const SortableTaskItem = React.memo(function SortableTaskItem({
+  task,
+  onCheck,
+  isOverlay = false,
+  isDraggingGlobal = false, 
+  ...props
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: task.id,
+      transition: null,
+      animateLayoutChanges: (args) => {
+        const { isSorting, wasDragging } = args;
+        if (isSorting || wasDragging) return false;
+        return defaultAnimateLayoutChanges(args);
+      },
+    });
 
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
 
-  // days-left (unchanged)
   const nowForPopup = new Date();
   const dueForPopup = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
   let daysLeftText = "", isNearForPopup = false, isLateForPopup = false;
   if (dueForPopup) {
     const todayMid = new Date(nowForPopup.getFullYear(), nowForPopup.getMonth(), nowForPopup.getDate());
-    const dueMid = new Date(dueForPopup.getFullYear(), dueForPopup.getMonth(), dueForPopup.getDate());
+    const dueMid   = new Date(dueForPopup.getFullYear(), dueForPopup.getMonth(), dueForPopup.getDate());
     const d = Math.round((dueMid - todayMid) / (1000*60*60*24));
     if (d > 1) daysLeftText = `${d} days left`;
     else if (d === 1) { daysLeftText = "1 day left"; isNearForPopup = true; }
-    else if (d === 0) { daysLeftText = "Due today"; isNearForPopup = true; }
+    else if (d === 0) { daysLeftText = "Due today";  isNearForPopup = true; }
     else { isLateForPopup = true; const a = Math.abs(d); daysLeftText = `${a} day${a===1?"":"s"} late`; }
   }
 
-const disableLayout = isDraggingGlobal || isDragging || isOverlay;
+  const disableLayout = isDraggingGlobal || isDragging || isOverlay;
+
+  const menuRef = useRef(null);
+
+  // Close on outside click
+
+    const [menuOpen, setMenuOpen] = React.useState(false);
+
+    React.useEffect(() => {
+  const handler = (e) => {
+    // If some OTHER task opened, close me.
+    if (e.detail !== task.id) setMenuOpen(false);
+  };
+  window.addEventListener(CLOSE_ALL_EVENT, handler);
+  return () => window.removeEventListener(CLOSE_ALL_EVENT, handler);
+}, [task.id]);
+
+  React.useEffect(() => {
+    if (!menuOpen) return;
+
+    const onDocPointerDown = (e) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target)) {
+        setMenuOpen(false); // triggers AnimatePresence exit
+      }
+    };
+
+    document.addEventListener("pointerdown", onDocPointerDown);
+    return () => document.removeEventListener("pointerdown", onDocPointerDown);
+  }, [menuOpen]);
 
   return (
     <motion.div
       ref={setNodeRef}
-      className="task-item selectable"
+      className={`task-item selectable ${ (isDragging || isOverlay) ? "task-item-dragged" : "" }`}
       layout={!disableLayout}
       layoutId={!disableLayout ? task.id : undefined}
       transition={!disableLayout ? { type: "spring", stiffness: 700, damping: 50 } : { duration: 0 }}
       style={{
-        transform: CSS.Transform.toString(transform),
+        transform: transform ? CSS.Transform.toString(transform) : undefined,
         transition,
         opacity: isDragging && !isOverlay ? 0 : 1,
-        zIndex: isDragging ? 2 : 1,
         willChange: isDragging ? "transform" : "auto",
       }}
       {...props}
@@ -107,24 +147,63 @@ const disableLayout = isDraggingGlobal || isDragging || isOverlay;
 
         <div
           className="task-dots-container"
-          onPointerDownCapture={e => { e.stopPropagation(); e.preventDefault(); }}
-          onPointerDown={e => e.stopPropagation()}
-          onTouchStartCapture={e => { e.stopPropagation(); e.preventDefault(); }}
-          onTouchStart={e => e.stopPropagation()}
-          onClick={e => e.stopPropagation()}
+          ref={menuRef}
+          onPointerDownCapture={(e) => { e.stopPropagation(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStartCapture={(e) => { e.stopPropagation(); }}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={() => {
+          setMenuOpen((prev) => {
+           const next = !prev;
+           // If we're opening this one, broadcast to others to close themselves.
+           if (next) {
+             window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: task.id }));
+           }
+           return next;
+         })
+          }}
         >
           <span className="task-dots" role="button" tabIndex={0} aria-label="Task actions">
             <Dots />
           </span>
+
+          {/* Plain, instant dropdown — no AnimatePresence, no motion, no variants */}
+            <AnimatePresence initial={false}>
+            {menuOpen && (
+              <motion.div
+                key="menu"
+                className="task-dots-dropdown"
+                role="menu"
+                variants={menuVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+                style={{ transformOrigin: "top right" }}
+                // don’t let clicks bubble to the container (which would toggle)
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button className="dots-option" role="menuitem">
+                  <Edit className="dots-option-icon" /> Edit
+                </button>
+                <button className="dots-option" role="menuitem">
+                  <Duplicate className="dots-option-icon" /> Duplicate
+                </button>
+                <button className="dots-option" role="menuitem">
+                  <Delete className="dots-option-icon" /> Delete
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>
   );
-}
-
+});
 
   
 const Tasks = () => {
+
+
 
 
 function DroppableContainer({ id, children }) {
@@ -313,13 +392,10 @@ const getTaskDateClass = (task) => {
   const diffDays = diffMs / (1000 * 60 * 60 * 48);
 
   if (diffDays < 0) {
-    // Overdue
     return "task-date-error";
   } else if (diffDays < 1) {
-    // Due soon (within 24h)
     return "task-date-warning";
   } else {
-    // Future
     return "task-date-accent";
   }
 };
@@ -381,12 +457,11 @@ const getTaskDateClass = (task) => {
     setCompletedTasks((items) => arrayMove(items, oldIndex, newIndex));
   }
 
-  // Moving between lists
   else if (isActiveInTasks && isOverInCompleted) {
     const movedTask = tasks.find((t) => t.id === activeId);
     setTasks((prev) => prev.filter((t) => t.id !== activeId));
     setCompletedTasks((prev) => [{ ...movedTask, completed: true }, ...prev]);
-    setIsCompletedTasksOpen(true); // Open completed section
+    setIsCompletedTasksOpen(true);
   } else if (isActiveInCompleted && isOverInTasks) {
     const movedTask = completedTasks.find((t) => t.id === activeId);
     setCompletedTasks((prev) => prev.filter((t) => t.id !== activeId));
@@ -399,14 +474,13 @@ const getTaskDateClass = (task) => {
 
 
 
-  // Checkbox click handler
+
 const handleCheck = (task, fromCompleted) => {
   if (!fromCompleted) {
     setIsCompletedTasksOpen(true);
     const el = document.querySelector(`.check-square[data-id="${task.id}"]`);
     if (el) { el.classList.add("checked"); launchSmallConfetti(el); }
 
-    // small delay so the check stroke begins before move; keep it short
     setTimeout(() => {
       setTasks(prev => prev.filter(t => t.id !== task.id));
       setCompletedTasks(prev => [{ ...task, completed: true }, ...prev]);
@@ -418,18 +492,17 @@ const handleCheck = (task, fromCompleted) => {
   }
 };
   
-  // ...existing code...
 
-  // Add this style to block pointer events on .selectable while dragging
   useEffect(() => {
     const styleId = "selecto-disable-pointer";
     let styleTag = document.getElementById(styleId);
+
+    const root = document.querySelector(".tasks-container");
 
     if (isDragging) {
       if (!styleTag) {
         styleTag = document.createElement("style");
         styleTag.id = styleId;
-        // Block pointer events on .selectable and .selecto-selection
         styleTag.innerHTML = `
           .selectable, .selecto-selection {
             pointer-events: none !important;
@@ -437,44 +510,28 @@ const handleCheck = (task, fromCompleted) => {
         `;
         document.head.appendChild(styleTag);
       }
+      if (root && !root.classList.contains("task-holding")) {
+        root.classList.add("task-holding");
+      }
     } else {
       if (styleTag) {
         styleTag.remove();
       }
+      if (root && root.classList.contains("task-holding")) {
+        root.classList.remove("task-holding");
+      }
     }
     return () => {
       if (styleTag) styleTag.remove();
+      if (root && root.classList.contains("task-holding")) {
+        root.classList.remove("task-holding");
+      }
     };
   }, [isDragging]);
 
     const selectoRef = useRef(null);
 
-// useEffect(() => {
-//   function handleClickOutside(e) {
-//     // if click is truly outside both your items and the selecto UI:
-//     if (
-//       !e.target.closest(".task-item") &&
-//       !e.target.closest(".selecto-selection") &&
-//       !e.target.closest(".selecto-area")
-//     ) {
-//       // 1) clear your CSS classes
-//       document
-//         .querySelectorAll(".task-item.selected")
-//         .forEach(el => el.classList.remove("selected"));
 
-//       // 2) and _also_ tell Selecto to forget everything:
-//       if (selectoRef.current) {
-//         // this will reset its internal selected-targets array
-//         selectoRef.current.setSelectedTargets([]);
-//       }
-//     }
-//   }
-
-//   document.addEventListener("click", handleClickOutside);
-//   return () => {
-//     document.removeEventListener("click", handleClickOutside);
-//   };
-// }, []);
 
   const todaysCount = tasks.filter(
     (task) =>
@@ -490,9 +547,9 @@ const clearTimerRef  = React.useRef(null);
 const FADE_MS = 420;
 
 const moodColorMap = {
-  warning: 'rgba(247, 236, 80, 0.04)',  // softer yellow
-  error:   'rgba(247,  74, 65, 0.035)', // softer red
-  success: 'rgba(  0, 255,149, 0.045)', // softer green/teal
+  warning: 'rgba(247, 236, 80, 0.04)',
+  error:   'rgba(247,  74, 65, 0.035)', 
+  success: 'rgba(  0, 255,149, 0.045)',
 };
 
 const setBgMood = (mood) => {
@@ -516,28 +573,28 @@ const setBgMood = (mood) => {
     return;
   }
 
-  if (currentMoodRef.current === mood) return; // no change
+  if (currentMoodRef.current === mood) return; 
 
-  // Prepare idle buffer with the new color, fade it in, fade the old out
+
   idle.style.setProperty('--mood-color', moodColorMap[mood] || 'transparent');
   idle.style.opacity = '1';
   active.style.opacity = '0';
 
-  // swap buffers
+
   activeBufRef.current = activeBufRef.current === 'a' ? 'b' : 'a';
   currentMoodRef.current = mood;
 };
 
 const moodFromDateClass = (cls, task) => {
-  if (!cls || task?.completed) return null;     // don't tint completed/unknown
-  if (cls.includes('task-date-error'))   return 'error';    // overdue → red
-  if (cls.includes('task-date-warning')) return 'warning';  // today/tomorrow → yellow
-  if (cls.includes('task-date-accent'))  return 'success';  // future → green
+  if (!cls || task?.completed) return null;
+  if (cls.includes('task-date-error'))   return 'error';
+  if (cls.includes('task-date-warning')) return 'warning';
+  if (cls.includes('task-date-accent'))  return 'success';
   return null;
 };
 
 
-// Create #mood-layer with two buffers once
+
 useEffect(() => {
   if (document.getElementById('mood-layer')) return;
 
@@ -561,6 +618,8 @@ useEffect(() => {
 
 
 
+
+
   return (
     <div className="tasks-container">
       <div style={{width: "620px"}} className="tasks-subcontainer">
@@ -574,7 +633,7 @@ useEffect(() => {
             className="title-container"
           >
             {getIcon()}
-            <p className="title">{getGreeting()}, Alex</p>
+            <p className="title">{getGreeting()}, User</p>
           </motion.div>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -613,14 +672,13 @@ useEffect(() => {
         <div className="task-add-tooltip">A</div>
       </div>
       <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>
-      <LayoutGroup id="lists" layout>  {/* <— NEW */}
+      <LayoutGroup id="lists" layout>
       <DndContext
-        // collisionDetection={closestCenter}
         collisionDetection={pointerWithin} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Tasks List */}
+
         <DroppableContainer id="tasks">
         <SortableContext
           items={tasks.map((t) => t.id)}
@@ -640,10 +698,13 @@ useEffect(() => {
       date={date}
       dateClass={dateClass}
       timeClass={timeClass}
-      onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass))}
+
+
+      onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
       onMouseLeave={() => setBgMood(null)}
       onCheck={() => handleCheck(task, false)}
       isDraggingGlobal={isDragging}
+      
     />
   );
 })}
@@ -651,7 +712,7 @@ useEffect(() => {
           </div>
         </SortableContext>
         </DroppableContainer>
-        {/* Completed Tasks */}
+
         <div className="completed-tasks-list">
           <div className="completed-tasks-header">
             <div
@@ -699,6 +760,7 @@ useEffect(() => {
                   timeClass={getTaskTimeClass(task)}
                   onCheck={() => handleCheck(task, true)}
                   isDraggingGlobal={isDragging}
+                  
                 />
               );
             })}
@@ -709,7 +771,7 @@ useEffect(() => {
   )}
 </AnimatePresence>
 
-{/* <-- Move DragOverlay here, outside of the conditional */}
+
 <DragOverlay dropAnimation={null}>
   {activeId ? (() => {
     const activeTask =
@@ -744,27 +806,23 @@ useEffect(() => {
     ref={selectoRef}
     container={document.body}
     selectableTargets={[".selectable"]}
+    selectByClick={false}
+    selectFromInside={false}
+    continueSelect={false}
+    toggleContinueSelect={["ctrl", "meta"]}
+
     hitRate={0}
-    selectByClick={true} // <-- Prevent selection on click
-    selectFromInside  
-    continueSelect={true}
-    toggleContinueSelect={"shift"}
     ratio={0}
-    selectable={true}
-    
+
     onSelect={e => {
       e.added.forEach(el => el.classList.add("selected"));
       e.removed.forEach(el => el.classList.remove("selected"));
     }}
     onSelectEnd={e => {
-      if (e.selected.length === 0) {
-        document.querySelectorAll(".task-item.selected").forEach((el) => {
-          el.classList.remove("selected");
-        });
-      }
     }}
   />
 )}
+
     </div>
   );
 };

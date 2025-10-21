@@ -10,8 +10,6 @@
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
-           /* Or however tall your scroll area is */
-
   position: relative;
 }
 
@@ -45,15 +43,48 @@
 }
 
 .title {
-  background: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text; /* For Firefox */
-  color: transparent;
   font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.25px;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--color-text-primary);
+  display: inline-block;
 }
+
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --title-gradient: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --title-gradient: linear-gradient(180deg, #1b1b1b 55%, #999999 100%);
+  }
+}
+
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .title {
+    background-image: var(--title-gradient);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@supports not (-webkit-background-clip: text) {
+  .title {
+    background-image: none !important;
+    -webkit-text-fill-color: initial;
+    color: var(--color-text-primary) !important;
+  }
+}
+
 
 .information {
   color: var(--color-text-secondary);
@@ -142,10 +173,11 @@
   color: var(--color-text-primary);
   border: 0.5px solid var(--color-border);
   box-sizing: border-box;
-  transition: background-color 0.3s ease-in-out;
+  transition: background-color 0.2s ease-in-out;
+    overflow: visible; 
+  position: relative;
 }
 
-/* .task-item { will-change: transform; } */
 
 .task-item:hover {
   background-color: var(--color-surface-2);
@@ -155,10 +187,25 @@
   background-color: var(--color-surface-3);
 }
 
+.task-item-dragged {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.25),
+    0 10px 25px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  border-color: rgba(255, 255, 255, 0.06);
+  background-color: var(--color-surface-2);
+}
+
+.tasks-container.task-holding .tasks-list-container .task-item {
+
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: auto; 
+}
+
 .rCS179bs95 {
-  border: 1px solid var(--color-border-2) !important; /* Change border color */
-  background: hsla(0, 0%, 100%, 0.103) !important; /* Change fill color */
-  border-radius: 8px !important; /* Change border radius */
+  border: 1px solid var(--color-border-2) !important;
+  background: hsla(0, 0%, 100%, 0.103) !important; 
+  border-radius: 8px !important; 
   backdrop-filter: blur(1px);
 }
 
@@ -173,7 +220,7 @@
   margin-bottom: -6px;
   width: 21px;
   height: 21px;
-  color: var(--color-border-2); /* Adjust color as needed */
+  color: var(--color-border-2); 
   cursor: grab;
 }
 
@@ -243,14 +290,12 @@
   position: relative;
 }
 
-/* wrapper to position the popup */
 .task-date-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
 }
 
-/* popup shown on hover above the date */
 .task-date-popup {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -269,9 +314,9 @@
   pointer-events: none;
   transition: opacity 0.16s ease, transform 0.16s ease;
   z-index: 10;
+  box-shadow: #0000006b 0px 0px 20px 0px;
 }
 
-/* ...existing code... */
 
 .task-date-popup.late {
   color: var(--color-error);
@@ -282,9 +327,6 @@
   color: var(--color-warning);
 }
 
-/* ...existing code... */
-
-/* show popup when hovering the wrapper (works for keyboard focus if needed too) */
 .task-date-wrapper:hover .task-date-popup,
 .task-date-wrapper:focus-within .task-date-popup {
   opacity: 1;
@@ -292,23 +334,6 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* small arrow */
-/* .task-date-popup::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  background: var(--color-surface-2);
-  border-left: 0.5px solid var(--color-border);
-  border-bottom: 0.5px solid var(--color-border);
-  transform-origin: center;
-  rotate: 45deg;
-  margin-top: -4px;
-  z-index: -1;
-} */
 
 .task-dots-container {
   display: flex;
@@ -320,6 +345,55 @@
   border-radius: 8px;
   transition: background 0.2s;
   background: transparent;
+
+  position: relative;
+}
+
+.task-dots-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: -16px;
+  min-width: 132px;
+  background: var(--color-surface-2);
+  border: 0.5px solid var(--color-border);
+  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.247), 0 4px 10px rgba(2, 8, 23, 0.651);
+  border-radius: 10px;
+  padding: 6px;
+    z-index: 99999;
+}
+
+.dots-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 7px 8px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  line-height: 16px;
+  gap: 8px;
+  transition: background 0.3s;
+  font-family: "Switzer", sans-serif;
+  letter-spacing: 0.1px;
+}
+
+.dots-option-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-primary);
+}
+
+.dots-option + .dots-option {
+  margin-top: 4px;
+}
+
+.dots-option:hover {
+  background: var(--color-surface-3);
 }
 
 .task-dots-container:hover {
@@ -334,19 +408,10 @@
   height: 16px;
   opacity: 1;
 
-  margin-left: 0; /* Remove if you want no extra space */
+  margin-left: 0; 
   cursor: pointer;
 }
 
-/* .task-item:hover .task-dots {
-  width: 16px;
-  height: 16px;
-  opacity: 1;
-} */
-
-/* .task-item:hover .task-dots {
-  opacity: 1;
-} */
 
 
 .task-time {
@@ -364,15 +429,14 @@
   font-weight: 400;
   color: var(
     --color-success
-  ); /* Green color for the date, similar to the image */
+  ); 
   background-color: hsla(
     165,
     82%,
     40%,
     0.1
-  ); /* Slightly darker green background for the date */
+  );
   transition: all 0.3s ease-in-out;
-  /* padding: 4px 16px; */
   padding: 2px 10px;
   border-radius: 5px;
 }
@@ -412,32 +476,23 @@
 
 .task-date-warning {
   color: var(--color-warning);
-  background-color: rgba(173, 119, 30, 0.1); /* light orange background */
+  background-color: rgba(173, 119, 30, 0.1); 
 }
 
 .task-date-accent {
   color: var(--color-accent);
-  background-color: rgba(16, 163, 127, 0.1); /* light green background */
+  background-color: rgba(16, 163, 127, 0.1);
 }
 
 .task-date-completed {
   color: var(--color-text-secondary);
-  background-color: hsla(0, 0%, 64%, 0.1); /* light green background */
+  background-color: hsla(0, 0%, 64%, 0.1);
 }
-
-/* .task-time-error {
-  color: var(--color-error);
-  font-weight: 600;
-} */
 
 .task-time-warning {
   color: var(--color-text-secondary);
 }
 
-/* .task-time-accent {
-  color: var(--color-accent);
-  font-weight: 600;
-} */
 
 .task-time-completed {
   color: var(--color-text-secondary);
