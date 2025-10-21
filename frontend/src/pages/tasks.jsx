@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./tasks.css";
-import { AnimatePresence, LayoutGroup, MotionConfig, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, MotionConfig, delay, motion } from "framer-motion";
 import { DndContext, useDroppable, DragOverlay, pointerWithin  } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -28,10 +28,63 @@ import Selecto from "react-selecto";
 
 const CLOSE_ALL_EVENT = "task-dots-close-all";
 
-const menuVariants = {
-  open:   { opacity: 1, scale: 1, y: 0,   transition: { duration: 0.18 } },
-  closed: { opacity: 0, scale: 0.96, y: -6, transition: { duration: 0.18 } },
+const EASE_SOFT = [0.25, 0.8, 0.3, 1];
+const POP = { type: "spring", stiffness: 420, damping: 42, mass: 0.7 };
+
+// Shell: soft rise & fade-in, gentle scale growth
+const menuShell = {
+  open: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      ...POP,
+      duration: 0.38,
+      when: "beforeChildren",
+      delayChildren: 0.08,
+      staggerChildren: 0.06
+    }
+  },
+  closed: {
+    opacity: 0,
+    y: -10,
+    scale: 0.97,
+    transition: {
+      duration: 0.28,
+      ease: EASE_SOFT,
+      when: "afterChildren",
+      staggerDirection: -1
+    }
+  }
 };
+
+const itemsWrap = {
+  open:  { transition: { staggerChildren: 0.06 } },
+  closed:{ transition: { staggerChildren: 0.045, staggerDirection: -1 } }
+};
+
+// Items: calm float upward with gentle spring; fade out softly
+const menuItem = {
+  open: {
+    opacity: 1,
+    y: 0,
+    x: 0,
+    scale: 1,
+    transition: { type: "spring", stiffness: 460, damping: 40, mass: 0.68 }
+  },
+  closed: {
+    opacity: 0,
+    y: -6,
+    x: 4,
+    scale: 0.98,
+    transition: { duration: 0.18, ease: EASE_SOFT }
+  }
+};
+
+
+
+
+
 
 // Sortable Task Item
 const SortableTaskItem = React.memo(function SortableTaskItem({
@@ -119,13 +172,16 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           <Drag className="drag-handle-icon" />
         </span>
 
-        <div
+        <motion.div
           className={`check-square${task.completed || justChecked ? " checked" : ""}`}
           data-id={task.id}
           onClick={() => { if (!task.completed) setJustChecked(true); onCheck(); }}
+            whileTap={{ scale: 0.92 }}
+  animate={(task.completed) ? { scale: [1, 1.06, 1] } : {}}
+  transition={{ duration: 0.008 }}
         >
           {(task.completed || justChecked) && <Check className="check-icon" />}
-        </div>
+        </motion.div>
 
         <p className="task-title">{task.title}</p>
       </div>
@@ -135,13 +191,14 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
         <div className="task-date-wrapper">
           <span className={`task-date ${props.dateClass}`}>{props.date}</span>
           {dueForPopup && !task.completed && (
-            <div
+            <motion.div
               className={`task-date-popup${isLateForPopup ? " late" : ""} ${isNearForPopup ? " near" : ""}`}
               role="tooltip"
               aria-hidden={isOverlay ? "true" : "false"}
+              
             >
               {daysLeftText}
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -168,32 +225,57 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           </span>
 
           {/* Plain, instant dropdown — no AnimatePresence, no motion, no variants */}
-            <AnimatePresence initial={false}>
-            {menuOpen && (
-              <motion.div
-                key="menu"
-                className="task-dots-dropdown"
-                role="menu"
-                variants={menuVariants}
-                initial="closed"
-                animate="open"
-                exit="closed"
-                style={{ transformOrigin: "top right" }}
-                // don’t let clicks bubble to the container (which would toggle)
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button className="dots-option" role="menuitem">
-                  <Edit className="dots-option-icon" /> Edit
-                </button>
-                <button className="dots-option" role="menuitem">
-                  <Duplicate className="dots-option-icon" /> Duplicate
-                </button>
-                <button className="dots-option" role="menuitem">
-                  <Delete className="dots-option-icon" /> Delete
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+<AnimatePresence initial={false} mode="wait">
+  {menuOpen && (
+    <motion.div
+      key="menu"
+      className="task-dots-dropdown"
+      role="menu"
+      variants={menuShell}
+      initial="closed"
+      animate="open"
+      exit="closed"
+      layout
+      style={{ transformOrigin: "top right" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <motion.div variants={itemsWrap} initial="closed" animate="open" exit="closed">
+        <motion.button
+          className="dots-option"
+          role="menuitem"
+          variants={menuItem}
+          whileHover={{ x: 1.5, scale: 1.004 }}
+          whileTap={{ scale: 0.992 }}
+        >
+          <Edit className="dots-option-icon" /> Edit
+        </motion.button>
+
+        <motion.button
+          className="dots-option"
+          role="menuitem"
+          variants={menuItem}
+          whileHover={{ x: 1.5, scale: 1.004 }}
+          whileTap={{ scale: 0.992 }}
+        >
+          <Duplicate className="dots-option-icon" /> Duplicate
+        </motion.button>
+
+        <motion.button
+          className="dots-option"
+          role="menuitem"
+          variants={menuItem}
+          whileHover={{ x: 1.5, scale: 1.004 }}
+          whileTap={{ scale: 0.992 }}
+        >
+          <Delete className="dots-option-icon" /> Delete
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+
+
         </div>
       </div>
     </motion.div>
@@ -737,10 +819,10 @@ useEffect(() => {
   {isCompletedTasksOpen && (
     <motion.div
       style={{ width: "100%" }}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+        initial={{ opacity: 0, y: 8, scale: 0.995 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, y: 8, scale: 0.995 }}
+  transition={{ duration: 0.28, ease: [0.25,0.8,0.3,1] }}
     >
       <DroppableContainer id="completedTasks">
         <SortableContext

@@ -360,6 +360,9 @@
   border-radius: 10px;
   padding: 6px;
     z-index: 99999;
+      overflow: hidden;                 /* prevents clip corners from flashing */
+  transform-origin: top right;      /* smoother scaleY accordion */
+  will-change: transform, opacity;
 }
 
 .dots-option {
