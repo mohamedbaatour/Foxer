@@ -21,6 +21,7 @@ import { ReactComponent as Check } from "../icons/check.svg";
 import {ReactComponent as Edit } from "../icons/edit.svg";
 import {ReactComponent as Duplicate } from "../icons/duplicate.svg";
 import {ReactComponent as Delete } from "../icons/delete.svg";
+import {ReactComponent as Calendar } from "../icons/calendar.svg";
 
 import confetti from "canvas-confetti";
 
@@ -317,7 +318,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-17T14:00:00Z",
+        parsedDate: "2025-10-21T14:00:00Z",
       },
       completed: false,
       focused: false,
@@ -330,7 +331,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-19T17:00:00Z",
+        parsedDate: "2025-10-23T10:00:00Z",
       },
       completed: false,
       focused: false,
@@ -343,7 +344,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-20T17:00:00Z",
+        parsedDate: "2025-10-24T08:00:00Z",
       },
       completed: false,
       focused: false,
@@ -356,7 +357,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-23T17:00:00Z",
+        parsedDate: "2025-10-26T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -701,6 +702,12 @@ useEffect(() => {
 }, []);
 
 
+const now = new Date();
+const month = now.toLocaleString('en-US',{month:'short'});
+const day = now.getDate();
+const dateLabel = `${day} ${month}`;
+
+
 
 
 
@@ -745,7 +752,8 @@ useEffect(() => {
           <Dots />
         </motion.div>
       </div>
-      <div className="task-input-container">
+<div className="task-input-container">
+  {/* left side (you already added) */}
   <AnimatePresence initial={false}>
     {isInputFocused && (
       <motion.div
@@ -757,22 +765,54 @@ useEffect(() => {
         transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
         aria-hidden
       >
-        <span className="drag-handle-icon lite"><Drag /></span>
+        <span className="drag-handle-icon lite"><Drag/></span>
         <div className="check-square lite" />
       </motion.div>
     )}
   </AnimatePresence>
 
-  <input
+  {/* INPUT with animated ring/elevation */}
+  <motion.input
     ref={inputRef}
     placeholder="Create a new task..."
     className="task-add-input"
     onFocus={() => setIsInputFocused(true)}
     onBlur={() => setIsInputFocused(false)}
+    animate={isInputFocused ? 'focused' : 'idle'}
+    transition={{ duration: 0.22, ease: [0.25,0.8,0.3,1] }}
   />
 
-  <div className="task-add-tooltip">A</div>
+  {/* right adornment: A → date chip */}
+  <div className="task-input-right">
+    <AnimatePresence initial={false} mode="wait">
+      {!isInputFocused ? (
+        <motion.div
+          key="kbd"
+          className="task-add-tooltip"
+          initial={{ opacity: 0, y: 6, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.96 }}
+          transition={{ duration: 0.18, ease: [0.25,0.8,0.3,1] }}
+        >
+          A
+        </motion.div>
+      ) : (
+        <motion.div
+          key="date"
+          className="task-date-chip"
+          initial={{ opacity: 0, y: 6, x: 4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, x: 4, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
+        >
+          <Calendar className="chip-ico"/>
+          <span>{dateLabel}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
 </div>
+
 
       <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>
       <LayoutGroup id="lists" layout>
