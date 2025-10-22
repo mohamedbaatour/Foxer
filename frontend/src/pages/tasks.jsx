@@ -152,6 +152,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [menuOpen]);
 
+  
+
   return (
     <motion.div
       ref={setNodeRef}
@@ -744,15 +746,34 @@ useEffect(() => {
         </motion.div>
       </div>
       <div className="task-input-container">
-        <input
-          ref={inputRef}
-          placeholder="Create a new task..."
-          className="task-add-input"
-          onFocus={() => setIsInputFocused(true)}
-          onBlur={() => setIsInputFocused(false)}
-        ></input>
-        <div className="task-add-tooltip">A</div>
-      </div>
+  <AnimatePresence initial={false}>
+    {isInputFocused && (
+      <motion.div
+        key="left"
+        className="task-input-leftgroup"
+        initial={{ opacity: 0, x: -6 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -6 }}
+        transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
+        aria-hidden
+      >
+        <span className="drag-handle-icon lite"><Drag /></span>
+        <div className="check-square lite" />
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  <input
+    ref={inputRef}
+    placeholder="Create a new task..."
+    className="task-add-input"
+    onFocus={() => setIsInputFocused(true)}
+    onBlur={() => setIsInputFocused(false)}
+  />
+
+  <div className="task-add-tooltip">A</div>
+</div>
+
       <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>
       <LayoutGroup id="lists" layout>
       <DndContext
