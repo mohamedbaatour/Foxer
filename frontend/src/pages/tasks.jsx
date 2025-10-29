@@ -22,10 +22,18 @@ import {ReactComponent as Edit } from "../icons/edit.svg";
 import {ReactComponent as Duplicate } from "../icons/duplicate.svg";
 import {ReactComponent as Delete } from "../icons/delete.svg";
 import {ReactComponent as Calendar } from "../icons/calendar.svg";
+import {ReactComponent as Clock } from "../icons/clock.svg";
 
 import confetti from "canvas-confetti";
 
 import Selecto from "react-selecto";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import Popper from "@mui/material/Popper";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
 
 const CLOSE_ALL_EVENT = "task-dots-close-all";
 
@@ -85,12 +93,12 @@ const menuItem = {
 
 
 
-
-
 // Sortable Task Item
 const SortableTaskItem = React.memo(function SortableTaskItem({
   task,
   onCheck,
+  onDelete, // <-- added
+  onDuplicate, // <-- added
   isOverlay = false,
   isDraggingGlobal = false, 
   ...props
@@ -259,6 +267,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           variants={menuItem}
           whileHover={{ x: 1.5, scale: 1.004 }}
           whileTap={{ scale: 0.992 }}
+          onClick={(e) => { e.stopPropagation(); if (onDuplicate) { onDuplicate(task.id); setMenuOpen(false); } }}
         >
           <Duplicate className="dots-option-icon" /> Duplicate
         </motion.button>
@@ -269,6 +278,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           variants={menuItem}
           whileHover={{ x: 1.5, scale: 1.004 }}
           whileTap={{ scale: 0.992 }}
+          onClick={(e) => { e.stopPropagation(); if (onDelete) { onDelete(task.id); setMenuOpen(false); } }} // <-- added
         >
           <Delete className="dots-option-icon" /> Delete
         </motion.button>
@@ -308,8 +318,91 @@ function DroppableContainer({ id, children }) {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
 
+  // MUI time-picker state (dayjs)
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const timePickerAnchorRef = useRef(null);
+  const [selectedTime, setSelectedTime] = useState(null); // dayjs() or null
 
+  // close popper on outside click (safety)
+  useEffect(() => {
+    if (!timePickerOpen) return;
+    const onDocDown = (e) => {
+      if (!timePickerAnchorRef.current) return;
+      const root = timePickerAnchorRef.current;
+      if (!root.contains(e.target) && !(document.querySelector('.mui-timepicker-popper')?.contains(e.target))) {
+        setTimePickerOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onDocDown);
+    return () => document.removeEventListener("pointerdown", onDocDown);
+  }, [timePickerOpen]);
 
+  // Add task helper — creates a new task and updates state (localStorage persists via effects)
+  const addTask = (title) => {
+    const nowIso = new Date().toISOString();
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // if the user selected a time, combine it with today's date via dayjs
+    let parsedDateIso = nowIso;
+    if (selectedTime) {
+      const d = dayjs();
+      const combined = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+      parsedDateIso = combined.toISOString();
+    }
+    const newTask = {
+      id,
+      title,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      due: { originalInput: selectedTime ? selectedTime.format("HH:mm") : "", parsedDate: parsedDateIso },
+      completed: false,
+      focused: false,
+      deleted: false,
+    };
+    setTasks((prev) => [newTask, ...prev]);
+    // clear input
+    if (inputRef.current) inputRef.current.value = "";
+    // reset time picker selection
+    setSelectedTime(null);
+    setTimePickerOpen(false);
+  };
+  
+  // Duplicate a task in-place (no animation)
+  const duplicateTask = (id, fromCompleted = false) => {
+    if (fromCompleted) {
+      const idx = completedTasks.findIndex((t) => t.id === id);
+      if (idx === -1) return;
+      const src = completedTasks[idx];
+      const nowIso = new Date().toISOString();
+      const newTask = {
+        ...src,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      setCompletedTasks((prev) => {
+        const before = prev.slice(0, idx + 1);
+        const after = prev.slice(idx + 1);
+        return [...before, newTask, ...after];
+      });
+    } else {
+      const idx = tasks.findIndex((t) => t.id === id);
+      if (idx === -1) return;
+      const src = tasks[idx];
+      const nowIso = new Date().toISOString();
+      const newTask = {
+        ...src,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      setTasks((prev) => {
+        const before = prev.slice(0, idx + 1);
+        const after = prev.slice(idx + 1);
+        return [...before, newTask, ...after];
+      });
+    }
+  };
+  
   const defaultTasks = [
     {
       id: "1",
@@ -318,7 +411,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-21T14:00:00Z",
+        parsedDate: "2025-11-01T14:00:00Z",
       },
       completed: false,
       focused: false,
@@ -331,7 +424,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-23T10:00:00Z",
+        parsedDate: "2025-10-29T10:00:00Z",
       },
       completed: false,
       focused: false,
@@ -344,7 +437,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-24T08:00:00Z",
+        parsedDate: "2025-10-30T08:00:00Z",
       },
       completed: false,
       focused: false,
@@ -357,7 +450,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-26T17:00:00Z",
+        parsedDate: "2025-10-27T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -398,28 +491,40 @@ function DroppableContainer({ id, children }) {
       document.removeEventListener("keydown", handleKeyPress);
     };
   }, []);
+ 
+  // Close task input (and timepicker) on Escape
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape" || e.key === "Esc") {
+        if (isInputFocused) {
+          setIsInputFocused(false);
+          inputRef.current?.blur();
+          setTimePickerOpen(false);
+        }
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [isInputFocused]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      return "Good morning";
-    } else if (hour < 18) {
-      return "Good afternoon";
-    } else {
-      return "Good evening";
-    }
-  };
+  const getHour = (d = new Date()) => d.getHours();
 
-  const getIcon = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      return <Sunrise className="title-icon" />;
-    } else if (hour < 18) {
-      return <Sun className="title-icon" />;
-    } else {
-      return <Moon className="title-icon" />;
-    }
-  };
+ const getGreeting = (h = getHour()) =>
+  h >= 6 && h < 12
+    ? "Good morning"
+    : h >= 12 && h < 18
+    ? "Good afternoon"
+    : h >= 18 && h < 22
+    ? "Good evening"
+    : "Good night";
+
+ const getIcon = (h = getHour()) =>
+  h >= 6 && h < 12
+    ? <Sunrise className="title-icon" />
+    : h >= 12 && h < 18
+    ? <Sun className="title-icon" />
+    : <Moon className="title-icon" />;
+
 
   const formatTaskDate = (dateString) => {
     if (!dateString) return { time: "", date: "" };
@@ -758,7 +863,7 @@ const dateLabel = `${day} ${month}`;
     {isInputFocused && (
       <motion.div
         key="left"
-        className="task-input-leftgroup"
+        className="task-input-left"
         initial={{ opacity: 0, x: -6 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -6 }}
@@ -780,6 +885,18 @@ const dateLabel = `${day} ${month}`;
     onBlur={() => setIsInputFocused(false)}
     animate={isInputFocused ? 'focused' : 'idle'}
     transition={{ duration: 0.22, ease: [0.25,0.8,0.3,1] }}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        const val = inputRef.current?.value?.trim();
+        if (val) {
+          addTask(val);
+         // deselect input after adding
+         setIsInputFocused(false);
+         inputRef.current?.blur();
+         setTimePickerOpen(false);
+        }
+      }
+    }}
   />
 
   {/* right adornment: A → date chip */}
@@ -796,18 +913,58 @@ const dateLabel = `${day} ${month}`;
         >
           A
         </motion.div>
+        
       ) : (
+        <div  className="task-center">
+          <motion.div
+          key="date"
+          className="task-date-chip task-clock-chip"
+                    initial={{ opacity: 0, y: 6, x: 4}}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, y: -6, x: 4,}}
+          transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
+          ref={timePickerAnchorRef}
+          onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }} // <- prevent blur so input remains focused
+          onClick={(e) => {
+            e.stopPropagation();
+            setTimePickerOpen((s) => !s);
+          }}
+          role="button"
+          aria-haspopup="dialog"
+          aria-expanded={timePickerOpen}
+        >
+          <Clock className="chip-ico clock-ico"/>
+        </motion.div>
+
+        {/* MUI TimePicker popper */}
+
+
         <motion.div
           key="date"
           className="task-date-chip"
-          initial={{ opacity: 0, y: 6, x: 4, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6, x: 4, scale: 0.98 }}
+          initial={{ opacity: 0, y: 6, x: 4}}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, y: -6, x: 4,}}
           transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
         >
-          <Calendar className="chip-ico"/>
-          <span>{dateLabel}</span>
+          <motion.div    initial={{ opacity: 0, y: 0, x: -10}}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, y: 0, x: -10,}}
+          transition={{ delay: 0.1 }}>
+          <Calendar className="chip-ico calendar-ico"/>
+          </motion.div>
+
+          <motion.div className="task-date-chip-text"
+          
+          initial={{ opacity: 0, y: 0, x: 10}}
+          animate={{ opacity: 1, y: 0, x: 0 }}
+          exit={{ opacity: 0, y: 0, x: 10,}}
+          transition={{ delay: 0.1 }}
+          >{dateLabel}</motion.div>
+          
         </motion.div>
+        
+        </div>
       )}
     </AnimatePresence>
   </div>
@@ -841,11 +998,11 @@ const dateLabel = `${day} ${month}`;
       date={date}
       dateClass={dateClass}
       timeClass={timeClass}
-
-
       onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
       onMouseLeave={() => setBgMood(null)}
       onCheck={() => handleCheck(task, false)}
+      onDelete={(id) => setTasks(prev => prev.filter(t => t.id !== id))} // <-- added
+      onDuplicate={(id) => duplicateTask(id, false)} // <-- added
       isDraggingGlobal={isDragging}
       
     />
@@ -902,6 +1059,8 @@ const dateLabel = `${day} ${month}`;
                   dateClass={getTaskDateClass(task)}
                   timeClass={getTaskTimeClass(task)}
                   onCheck={() => handleCheck(task, true)}
+                  onDelete={(id) => setCompletedTasks(prev => prev.filter(t => t.id !== id))} // <-- added
+                  onDuplicate={(id) => duplicateTask(id, true)} // <-- added
                   isDraggingGlobal={isDragging}
                   
                 />
