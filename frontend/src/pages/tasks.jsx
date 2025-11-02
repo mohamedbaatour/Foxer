@@ -101,6 +101,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDuplicate, // <-- added
   isOverlay = false,
   isDraggingGlobal = false, 
+  isDeleting = false, // <-- added
   ...props
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -166,14 +167,22 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   return (
     <motion.div
       ref={setNodeRef}
-      className={`task-item selectable ${ (isDragging || isOverlay) ? "task-item-dragged" : "" }`}
+      className={`task-item selectable ${ (isDragging || isOverlay) ? "task-item-dragged" : "" } ${isDeleting ? 'deleting' : ''}`} // <-- add deleting class
       layout={!disableLayout}
       layoutId={!disableLayout ? task.id : undefined}
+      /* When isDeleting is true, drive the delete animation via `animate`
+         so it runs while the item is still in the list. After your existing
+         timeout (DELETE_ANIM_MS) the item is removed from state. */
       transition={!disableLayout ? { type: "spring", stiffness: 700, damping: 50 } : { duration: 0 }}
+      animate={isDeleting ? { opacity: 0, y: -8, scale: 0.985 } : undefined}
+      // keep exit as a fallback for normal AnimatePresence removals
+      exit={{ opacity: 0, y: -8, scale: 0.985, transition: { duration: 0.18 } }}
       style={{
         transform: transform ? CSS.Transform.toString(transform) : undefined,
         transition,
         opacity: isDragging && !isOverlay ? 0 : 1,
+        // prevent pointer events during deletion
+        pointerEvents: isDeleting ? "none" : undefined,
         willChange: isDragging ? "transform" : "auto",
       }}
       {...props}
@@ -221,7 +230,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           onTouchStartCapture={(e) => { e.stopPropagation(); }}
           onTouchStart={(e) => e.stopPropagation()}
           onClick={() => {
-          setMenuOpen((prev) => {
+            setTimeout(() => {
+              setMenuOpen((prev) => {
            const next = !prev;
            // If we're opening this one, broadcast to others to close themselves.
            if (next) {
@@ -229,6 +239,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
            }
            return next;
          })
+            }, 35);
+          
           }}
         >
           <span className="task-dots" role="button" tabIndex={0} aria-label="Task actions">
@@ -273,15 +285,24 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
         </motion.button>
 
         <motion.button
-          className="dots-option"
-          role="menuitem"
-          variants={menuItem}
-          whileHover={{ x: 1.5, scale: 1.004 }}
-          whileTap={{ scale: 0.992 }}
-          onClick={(e) => { e.stopPropagation(); if (onDelete) { onDelete(task.id); setMenuOpen(false); } }} // <-- added
-        >
-          <Delete className="dots-option-icon" /> Delete
-        </motion.button>
+  className="dots-option"
+  role="menuitem"
+  variants={menuItem}
+  whileHover={{ x: 1.5, scale: 1.004 }}
+  whileTap={{ scale: 0.992 }}
+  onClick={(e) => {
+    e.stopPropagation();
+    if (onDelete) {
+      setTimeout(() => {
+        onDelete(task.id);
+        setMenuOpen(false);
+      }, 50);
+    }
+  }}
+>
+  <Delete className="dots-option-icon" /> Delete
+</motion.button>
+
       </motion.div>
     </motion.div>
   )}
@@ -424,7 +445,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-29T10:00:00Z",
+        parsedDate: "2025-11-04T10:00:00Z",
       },
       completed: false,
       focused: false,
@@ -437,7 +458,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-30T08:00:00Z",
+        parsedDate: "2025-11-02T08:00:00Z",
       },
       completed: false,
       focused: false,
@@ -450,7 +471,7 @@ function DroppableContainer({ id, children }) {
       updatedAt: "2025-10-23T21:45:00Z",
       due: {
         originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-27T17:00:00Z",
+        parsedDate: "2025-10-31T17:00:00Z",
       },
       completed: false,
       focused: false,
@@ -501,6 +522,8 @@ function DroppableContainer({ id, children }) {
           inputRef.current?.blur();
           setTimePickerOpen(false);
         }
+        // Close any open task dots dropdowns across all SortableTaskItem instances
+        window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }));
       }
     };
     document.addEventListener("keydown", handleEsc);
@@ -615,6 +638,23 @@ const getTaskDateClass = (task) => {
 
   const [isDragging, setIsDragging] = useState(false);
 
+  // deletion buffer to keep an item in the DOM while its exit animation runs
+  const [deletingIds, setDeletingIds] = useState([]);
+  const DELETE_ANIM_MS = 250;
+
+  const deleteTaskWithAnimation = (id, fromCompleted = false) => {
+    // mark as deleting so item gets deleting class and exit animation
+    setDeletingIds((s) => [...s, id]);
+    setTimeout(() => {
+      if (fromCompleted) {
+        setCompletedTasks((prev) => prev.filter((t) => t.id !== id));
+      } else {
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+      }
+      setDeletingIds((s) => s.filter((x) => x !== id));
+    }, DELETE_ANIM_MS);
+  };
+
   function handleDragStart(event) {
     setActiveId(event.active.id);
   setIsDragging(true);
@@ -675,10 +715,13 @@ const handleCheck = (task, fromCompleted) => {
       setTasks(prev => prev.filter(t => t.id !== task.id));
       setCompletedTasks(prev => [{ ...task, completed: true }, ...prev]);
       setIsCompletedTasksOpen(true);
-    }, 140);
+    }, 160);
   } else {
-    setCompletedTasks(prev => prev.filter(t => t.id !== task.id));
+    setTimeout(() => {
+          setCompletedTasks(prev => prev.filter(t => t.id !== task.id));
     setTasks(prev => [...prev, { ...task, completed: false }]);
+    }, 80);
+
   }
 };
   
@@ -825,7 +868,7 @@ const dateLabel = `${day} ${month}`;
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
             className="title-container"
           >
             {getIcon()}
@@ -835,7 +878,7 @@ const dateLabel = `${day} ${month}`;
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
+            transition={{ duration: 0.4, delay: 0.7 }}
             className="information"
           >
             It's {new Date().toLocaleString("en-US", { month: "short" })}{" "}
@@ -985,6 +1028,7 @@ const dateLabel = `${day} ${month}`;
           strategy={verticalListSortingStrategy}
         >
           <div className="tasks-list-container">
+<AnimatePresence initial={false}>
             {tasks.map((task) => {
   const { time, date } = formatTaskDate(task.due.parsedDate);
   const dateClass = getTaskDateClass(task);
@@ -1001,13 +1045,15 @@ const dateLabel = `${day} ${month}`;
       onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
       onMouseLeave={() => setBgMood(null)}
       onCheck={() => handleCheck(task, false)}
-      onDelete={(id) => setTasks(prev => prev.filter(t => t.id !== id))} // <-- added
+      onDelete={(id) => deleteTaskWithAnimation(id, false)} // animated delete
       onDuplicate={(id) => duplicateTask(id, false)} // <-- added
       isDraggingGlobal={isDragging}
+      isDeleting={deletingIds.includes(task.id)}
       
     />
   );
 })}
+          </AnimatePresence>
 
           </div>
         </SortableContext>
@@ -1059,9 +1105,10 @@ const dateLabel = `${day} ${month}`;
                   dateClass={getTaskDateClass(task)}
                   timeClass={getTaskTimeClass(task)}
                   onCheck={() => handleCheck(task, true)}
-                  onDelete={(id) => setCompletedTasks(prev => prev.filter(t => t.id !== id))} // <-- added
+                  onDelete={(id) => deleteTaskWithAnimation(id, true)} // animated delete
                   onDuplicate={(id) => duplicateTask(id, true)} // <-- added
                   isDraggingGlobal={isDragging}
+                  isDeleting={deletingIds.includes(task.id)}
                   
                 />
               );
