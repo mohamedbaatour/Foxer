@@ -23,6 +23,7 @@ import {ReactComponent as Duplicate } from "../icons/duplicate.svg";
 import {ReactComponent as Delete } from "../icons/delete.svg";
 import {ReactComponent as Calendar } from "../icons/calendar.svg";
 import {ReactComponent as Clock } from "../icons/clock.svg";
+import {ReactComponent as ArrowDown } from "../icons/arrow-down.svg";
 
 import confetti from "canvas-confetti";
 
@@ -856,6 +857,22 @@ const day = now.getDate();
 const dateLabel = `${day} ${month}`;
 
 
+const completedRef = useRef(null);
+const [showScrollBtn, setShowScrollBtn] = useState(false);
+
+useEffect(() => {
+  const onScroll = () => {
+    const completedEl = completedRef.current;
+    if (!completedEl) return;
+    const rect = completedEl.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    // Show button if completed section’s top is below viewport bottom
+    setShowScrollBtn(rect.top > viewportHeight * 0.9);
+  };
+  window.addEventListener("scroll", onScroll);
+  onScroll(); // run once at mount
+  return () => window.removeEventListener("scroll", onScroll);
+}, []);
 
 
 
@@ -1059,7 +1076,7 @@ const dateLabel = `${day} ${month}`;
         </SortableContext>
         </DroppableContainer>
 
-        <div className="completed-tasks-list">
+        <div className="completed-tasks-list" ref={completedRef}>
           <div className="completed-tasks-header">
             <div
               className={`completed-tasks-line ${
@@ -1171,6 +1188,24 @@ const dateLabel = `${day} ${month}`;
     }}
   />
 )}
+
+<AnimatePresence>
+  {showScrollBtn && (
+    <motion.div
+      className="scroll-to-completed"
+      onClick={() =>
+        completedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.3 }}
+    >
+      <ArrowDown className="scroll-icon" />
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
     </div>
   );
