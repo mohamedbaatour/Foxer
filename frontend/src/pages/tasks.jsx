@@ -24,6 +24,8 @@ import {ReactComponent as Delete } from "../icons/delete.svg";
 import {ReactComponent as Calendar } from "../icons/calendar.svg";
 import {ReactComponent as Clock } from "../icons/clock.svg";
 import {ReactComponent as ArrowDown } from "../icons/arrow-down.svg";
+import {ReactComponent as ArrowLeft} from "../icons/arrow-left.svg"
+import {ReactComponent as ArrowRight} from "../icons/arrow-right.svg"
 
 import confetti from "canvas-confetti";
 
@@ -35,6 +37,10 @@ import dayjs from "dayjs";
 import Popper from "@mui/material/Popper";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
+import {
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek,
+  addDays, addMonths, subMonths, isSameMonth, isSameDay, format
+} from "date-fns"
 
 const CLOSE_ALL_EVENT = "task-dots-close-all";
 
@@ -873,7 +879,24 @@ useEffect(() => {
   onScroll(); // run once at mount
   return () => window.removeEventListener("scroll", onScroll);
 }, []);
+        const [calendarMonth, setCalendarMonth] = useState(new Date())
+const [calendarOpen, setCalendarOpen] = useState(false)
+const [selectedDate, setSelectedDate] = useState(new Date())
+const calendarAnchorRef = useRef(null)
+const calendarPopRef = useRef(null)
 
+useEffect(() => {
+    if (calendarOpen) setCalendarMonth(selectedDate || new Date());
+  if (!calendarOpen) return
+  const handleOutside = e => {
+    if (!calendarPopRef.current?.contains(e.target) &&
+        !calendarAnchorRef.current?.contains(e.target)) {
+      setCalendarOpen(false)
+    }
+  }
+  document.addEventListener("pointerdown", handleOutside)
+  return () => document.removeEventListener("pointerdown", handleOutside)
+}, [calendarOpen, selectedDate])
 
 
   return (
@@ -899,7 +922,7 @@ useEffect(() => {
             className="information"
           >
             It's {new Date().toLocaleString("en-US", { month: "short" })}{" "}
-            {new Date().getDate()}. You have {tasks.length} tasks in total,{" "}
+            {new Date().getDate()}. You have {tasks.length} remaining tasks,{" "}
             <span className={todaysCount > 0 ? "today-count" : ""}>
               {todaysCount} today
             </span>
@@ -996,6 +1019,8 @@ useEffect(() => {
           <Clock className="chip-ico clock-ico"/>
         </motion.div>
 
+
+
         {/* MUI TimePicker popper */}
 
 
@@ -1006,6 +1031,15 @@ useEffect(() => {
           animate={{ opacity: 1, y: 0, x: 0 }}
           exit={{ opacity: 0, y: -6, x: 4,}}
           transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setCalendarOpen(s => !s)
+              
+            }}   // ← toggle calendar
+  ref={calendarAnchorRef}        
+            onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}  
+  role="button"
+          aria-haspopup="dialog"
         >
           <motion.div    initial={{ opacity: 0, y: 0, x: -10}}
           animate={{ opacity: 1, y: 0, x: 0 }}
@@ -1020,10 +1054,84 @@ useEffect(() => {
           animate={{ opacity: 1, y: 0, x: 0 }}
           exit={{ opacity: 0, y: 0, x: 10,}}
           transition={{ delay: 0.1 }}
-          >{dateLabel}</motion.div>
+          >    {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
           
         </motion.div>
-        
+<AnimatePresence>
+  {calendarOpen && (
+    <motion.div
+      key="calendar-popup"
+      ref={calendarPopRef}
+      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+      transition={{ duration: 0.25, ease: [0.25, 0.8, 0.3, 1] }}
+      className="calendar-popup"
+      style={{
+        position: "absolute",
+        top: calendarAnchorRef.current?.offsetTop + 40 || 0,
+        right: 0,
+        zIndex: 3000,
+      }}
+      onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.preventDefault()}
+      onPointerDown={e => e.preventDefault()}
+      onTouchStart={e => e.preventDefault()}
+      
+    >
+{(() => {
+  const monthStart = startOfMonth(calendarMonth);
+  const monthEnd = endOfMonth(calendarMonth);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+
+  const rows = [];
+  let days = [];
+  let day = startDate;
+
+  while (day <= endDate) {
+    for (let i = 0; i < 7; i++) {
+      const clone = day;
+      days.push(
+        <button
+          key={day.getTime()}
+          className={
+            "calendar-day" +
+            (!isSameMonth(day, calendarMonth) ? " dim" : "") +
+            (isSameDay(day, selectedDate) ? " selected" : "")
+          }
+          onClick={() => {
+            setSelectedDate(clone);
+            setCalendarOpen(false);
+          }}
+        >
+          {format(day, "d")}
+        </button>
+      );
+      day = addDays(day, 1);
+    }
+    rows.push(<div className="calendar-row" key={day.getTime()}>{days}</div>);
+    days = [];
+  }
+
+  return (
+    <div className="calendar-box">
+      <div className="calendar-head">
+        <button className="calendar-arrow-container" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}><ArrowLeft className="calendar-arrow" /></button>
+        <span>{format(calendarMonth, "MMMM yyyy")}</span>
+        <button className="calendar-arrow-container" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}><ArrowRight className="calendar-arrow" /></button>
+      </div>
+      <div className="calendar-weekdays">
+        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => <div key={d}>{d}</div>)}
+      </div>
+      <div className="calendar-body">{rows}</div>
+    </div>
+  );
+})()}
+    </motion.div>
+  )}
+</AnimatePresence>
+
         </div>
       )}
     </AnimatePresence>
