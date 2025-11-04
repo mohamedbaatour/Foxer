@@ -42,6 +42,16 @@ import {
   addDays, addMonths, subMonths, isSameMonth, isSameDay, format
 } from "date-fns"
 
+const gridV = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { delayChildren: 0.03, staggerChildren: 0.012 } }
+};
+const cellV = {
+  hidden: { opacity: 0, y: 6 },         // no opacity here → won't fight `.dim`
+  show:   { opacity: 1, y: 0, transition: { type: "spring", stiffness: 520, damping: 34 } }
+};
+
+
 const CLOSE_ALL_EVENT = "task-dots-close-all";
 
 const EASE_SOFT = [0.25, 0.8, 0.3, 1];
@@ -165,7 +175,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       }
     };
 
-    document.addEventListener("pointerdown", onDocPointerDown);
+    document.addEventListener("pointerdown", onDocPointerDown)
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [menuOpen]);
 
@@ -351,6 +361,11 @@ function DroppableContainer({ id, children }) {
   const timePickerAnchorRef = useRef(null);
   const [selectedTime, setSelectedTime] = useState(null); // dayjs() or null
 
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const saved = localStorage.getItem("selectedDate");
+    return saved ? new Date(saved) : new Date();
+});
+
   // close popper on outside click (safety)
   useEffect(() => {
     if (!timePickerOpen) return;
@@ -365,13 +380,30 @@ function DroppableContainer({ id, children }) {
     return () => document.removeEventListener("pointerdown", onDocDown);
   }, [timePickerOpen]);
 
+  
+
+  useEffect(() => {
+    try {
+      if (selectedDate) localStorage.setItem("selectedDate", selectedDate.toISOString());
+     else localStorage.removeItem("selectedDate");
+    } catch (e) { /* noop */ }
+  }, [selectedDate]);
+
   // Add task helper — creates a new task and updates state (localStorage persists via effects)
   const addTask = (title) => {
     const nowIso = new Date().toISOString();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     // if the user selected a time, combine it with today's date via dayjs
     let parsedDateIso = nowIso;
-    if (selectedTime) {
+    if (selectedDate) {
+      let d = dayjs(selectedDate);
+      if (selectedTime) {
+        d = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+      } else {
+        d = d.hour(0).minute(0).second(0).millisecond(0);
+      }
+      parsedDateIso = d.toISOString();
+    } else if (selectedTime) {
       const d = dayjs();
       const combined = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
       parsedDateIso = combined.toISOString();
@@ -881,7 +913,10 @@ useEffect(() => {
 }, []);
         const [calendarMonth, setCalendarMonth] = useState(new Date())
 const [calendarOpen, setCalendarOpen] = useState(false)
-const [selectedDate, setSelectedDate] = useState(new Date())
+// const [selectedDate, setSelectedDate] = useState(() => {
+//     const saved = localStorage.getItem("selectedDate");
+//     return saved ? new Date(saved) : new Date();
+// });
 const calendarAnchorRef = useRef(null)
 const calendarPopRef = useRef(null)
 
@@ -1072,62 +1107,74 @@ useEffect(() => {
         top: calendarAnchorRef.current?.offsetTop + 40 || 0,
         right: 0,
         zIndex: 3000,
+        transformOrigin: "top right",
+        willChange: "transform, opacity"
       }}
       onClick={e => e.stopPropagation()}
-            onMouseDown={e => e.preventDefault()}
+      onMouseDown={e => e.preventDefault()}
       onPointerDown={e => e.preventDefault()}
       onTouchStart={e => e.preventDefault()}
-      
+      layout
     >
-{(() => {
-  const monthStart = startOfMonth(calendarMonth);
-  const monthEnd = endOfMonth(calendarMonth);
-  const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd);
+      {(() => {
+        const monthStart = startOfMonth(calendarMonth);
+        const monthEnd = endOfMonth(calendarMonth);
+        const startDate = startOfWeek(monthStart);
+        const endDate = endOfWeek(monthEnd);
 
-  const rows = [];
-  let days = [];
-  let day = startDate;
+        const rows = [];
+        let days = [];
+        let day = startDate;
 
-  while (day <= endDate) {
-    for (let i = 0; i < 7; i++) {
-      const clone = day;
-      days.push(
-        <button
-          key={day.getTime()}
-          className={
-            "calendar-day" +
-            (!isSameMonth(day, calendarMonth) ? " dim" : "") +
-            (isSameDay(day, selectedDate) ? " selected" : "")
+        while (day <= endDate) {
+          for (let i = 0; i < 7; i++) {
+            const clone = day;
+            days.push(
+              <motion.button
+                key={day.getTime()}
+                variants={cellV}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className={
+                  "calendar-day" +
+                  (!isSameMonth(day, calendarMonth) ? " dim" : "") +
+                  (isSameDay(day, selectedDate) ? " selected" : "")
+                }
+                onClick={() => {
+                  setSelectedDate(clone);
+                  setCalendarOpen(false);
+                }}
+              >
+                {format(day, "d")}
+              </motion.button>
+            );
+            day = addDays(day, 1);
           }
-          onClick={() => {
-            setSelectedDate(clone);
-            setCalendarOpen(false);
-          }}
-        >
-          {format(day, "d")}
-        </button>
-      );
-      day = addDays(day, 1);
-    }
-    rows.push(<div className="calendar-row" key={day.getTime()}>{days}</div>);
-    days = [];
-  }
+          rows.push(<div className="calendar-row" key={day.getTime()}>{days}</div>);
+          days = [];
+        }
 
-  return (
-    <div className="calendar-box">
-      <div className="calendar-head">
-        <button className="calendar-arrow-container" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}><ArrowLeft className="calendar-arrow" /></button>
-        <span>{format(calendarMonth, "MMMM yyyy")}</span>
-        <button className="calendar-arrow-container" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}><ArrowRight className="calendar-arrow" /></button>
-      </div>
-      <div className="calendar-weekdays">
-        {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => <div key={d}>{d}</div>)}
-      </div>
-      <div className="calendar-body">{rows}</div>
-    </div>
-  );
-})()}
+        return (
+          <div className="calendar-box">
+            <div className="calendar-head">
+              <button className="calendar-arrow-container" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}><ArrowLeft className="calendar-arrow" /></button>
+              <span>{format(calendarMonth, "MMMM yyyy")}</span>
+              <button className="calendar-arrow-container" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}><ArrowRight className="calendar-arrow" /></button>
+            </div>
+
+            {/* re-animates grid on open and on month change */}
+            <motion.div
+              key={calendarMonth.getTime()}
+              variants={gridV}
+              initial="hidden"
+              animate="show"
+              className="calendar-body"
+            >
+              {rows}
+            </motion.div>
+          </div>
+        );
+      })()}
     </motion.div>
   )}
 </AnimatePresence>
