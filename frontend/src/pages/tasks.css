@@ -199,6 +199,10 @@
   transition: background 0.2s;
 }
 
+.calendar-arrow-container:hover {
+  background: var(--color-border);
+}
+
 .calendar-arrow {
   width: 18px;
   height: 18px;
@@ -248,6 +252,13 @@
 .calendar-day.dim {
   color: var(--color-text-secondary);
 }
+
+.calendar-day.disabled {
+  color: var(--color-surface-3);
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
 .calendar-day.selected {
   background: var(--color-text-primary);
   color: var(--color-surface-2);

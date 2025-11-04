@@ -391,40 +391,46 @@ function DroppableContainer({ id, children }) {
 
   // Add task helper — creates a new task and updates state (localStorage persists via effects)
   const addTask = (title) => {
-    const nowIso = new Date().toISOString();
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    // if the user selected a time, combine it with today's date via dayjs
-    let parsedDateIso = nowIso;
-    if (selectedDate) {
-      let d = dayjs(selectedDate);
-      if (selectedTime) {
-        d = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
-      } else {
-        d = d.hour(0).minute(0).second(0).millisecond(0);
-      }
-      parsedDateIso = d.toISOString();
-    } else if (selectedTime) {
-      const d = dayjs();
-      const combined = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
-      parsedDateIso = combined.toISOString();
+  const nowIso = new Date().toISOString();
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  let parsedDateIso = nowIso;
+  if (selectedDate) {
+    let d = dayjs(selectedDate);
+    if (selectedTime) {
+      d = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+    } else {
+      d = d.hour(0).minute(0).second(0).millisecond(0);
     }
-    const newTask = {
-      id,
-      title,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      due: { originalInput: selectedTime ? selectedTime.format("HH:mm") : "", parsedDate: parsedDateIso },
-      completed: false,
-      focused: false,
-      deleted: false,
-    };
-    setTasks((prev) => [newTask, ...prev]);
-    // clear input
-    if (inputRef.current) inputRef.current.value = "";
-    // reset time picker selection
-    setSelectedTime(null);
-    setTimePickerOpen(false);
+    parsedDateIso = d.toISOString();
+  } else if (selectedTime) {
+    const d = dayjs();
+    const combined = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+    parsedDateIso = combined.toISOString();
+  }
+
+  const newTask = {
+    id,
+    title,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    due: { originalInput: selectedTime ? selectedTime.format("HH:mm") : "", parsedDate: parsedDateIso },
+    completed: false,
+    focused: false,
+    deleted: false,
   };
+
+  setTasks((prev) => [newTask, ...prev]);
+
+  // 🔥 Reset to today after adding
+  setSelectedDate(new Date());
+  setCalendarMonth(new Date());
+
+  if (inputRef.current) inputRef.current.value = "";
+  setSelectedTime(null);
+  setTimePickerOpen(false);
+};
+
   
   // Duplicate a task in-place (no animation)
   const duplicateTask = (id, fromCompleted = false) => {
@@ -462,6 +468,7 @@ function DroppableContainer({ id, children }) {
       });
     }
   };
+
   
   const defaultTasks = [
     {
@@ -517,6 +524,8 @@ function DroppableContainer({ id, children }) {
       deleted: false,
     },
   ];
+
+  
 
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem("tasks");
@@ -1104,7 +1113,7 @@ useEffect(() => {
       className="calendar-popup"
       style={{
         position: "absolute",
-        top: calendarAnchorRef.current?.offsetTop + 40 || 0,
+        top: calendarAnchorRef.current?.offsetTop + 42 || 0,
         right: 0,
         zIndex: 3000,
         transformOrigin: "top right",
@@ -1129,24 +1138,31 @@ useEffect(() => {
         while (day <= endDate) {
           for (let i = 0; i < 7; i++) {
             const clone = day;
+            const isPast = day < new Date().setHours(0, 0, 0, 0);
             days.push(
-              <motion.button
-                key={day.getTime()}
-                variants={cellV}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className={
-                  "calendar-day" +
-                  (!isSameMonth(day, calendarMonth) ? " dim" : "") +
-                  (isSameDay(day, selectedDate) ? " selected" : "")
-                }
-                onClick={() => {
-                  setSelectedDate(clone);
-                  setCalendarOpen(false);
-                }}
-              >
-                {format(day, "d")}
-              </motion.button>
+              
+
+<motion.button
+  key={day.getTime()}
+  variants={cellV}
+  whileHover={!isPast ? { scale: 1.04 } : {}}
+  whileTap={!isPast ? { scale: 0.96 } : {}}
+  disabled={isPast}
+  className={
+    "calendar-day" +
+    (!isSameMonth(day, calendarMonth) ? " dim" : "") +
+    (isPast ? " disabled" : "") +
+    (isSameDay(day, selectedDate) ? " selected" : "")
+  }
+  onClick={() => {
+    if (isPast) return; // prevent selection
+    setSelectedDate(clone);
+    setCalendarOpen(false);
+  }}
+>
+  {format(day, "d")}
+</motion.button>
+
             );
             day = addDays(day, 1);
           }
