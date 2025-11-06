@@ -215,7 +215,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           onClick={() => { if (!task.completed) setJustChecked(true); onCheck(); }}
             whileTap={{ scale: 0.92 }}
   animate={(task.completed) ? { scale: [1, 1.06, 1] } : {}}
-  transition={{ duration: 0.008 }}
+  transition={{ duration: 3.2 }}
         >
           {(task.completed || justChecked) && <Check className="check-icon" />}
         </motion.div>
@@ -469,61 +469,68 @@ function DroppableContainer({ id, children }) {
     }
   };
 
-  
-  const defaultTasks = [
-    {
-      id: "1",
-      title: "Go shopping",
-      createdAt: "2025-07-23T21:30:00Z",
-      updatedAt: "2025-10-23T21:45:00Z",
-      due: {
-        originalInput: "tomorrow 5pm",
-        parsedDate: "2025-11-01T14:00:00Z",
-      },
-      completed: false,
-      focused: false,
-      deleted: false,
+const daysFromNow = (n, hours = 12) => {
+  const d = new Date(Date.now() + n * 864e5);
+  d.setUTCHours(hours, 0, 0, 0);
+  return d.toISOString();
+};
+
+const nowDefault = new Date();
+
+const defaultTasks = [
+  {
+    id: "1",
+    title: "Finish project notes",
+    createdAt: nowDefault.toISOString(),
+    updatedAt: nowDefault.toISOString(),
+    due: {
+      originalInput: "today 6pm",
+      parsedDate: daysFromNow(0, 18), // today
     },
-    {
-      id: "2",
-      title: "Clean the house",
-      createdAt: "2025-10-23T21:30:00Z",
-      updatedAt: "2025-10-23T21:45:00Z",
-      due: {
-        originalInput: "tomorrow 5pm",
-        parsedDate: "2025-11-04T10:00:00Z",
-      },
-      completed: false,
-      focused: false,
-      deleted: false,
+    completed: false,
+    focused: true,
+    deleted: false,
+  },
+  {
+    id: "2",
+    title: "Go to the gym",
+    createdAt: nowDefault.toISOString(),
+    updatedAt: nowDefault.toISOString(),
+    due: {
+      originalInput: "tomorrow 7am",
+      parsedDate: daysFromNow(1, 7), // tomorrow
     },
-    {
-      id: "3",
-      title: "Go to the GYM",
-      createdAt: "2025-10-23T21:30:00Z",
-      updatedAt: "2025-10-23T21:45:00Z",
-      due: {
-        originalInput: "tomorrow 5pm",
-        parsedDate: "2025-11-02T08:00:00Z",
-      },
-      completed: false,
-      focused: false,
-      deleted: false,
+    completed: false,
+    focused: false,
+    deleted: false,
+  },
+  {
+    id: "3",
+    title: "Buy groceries",
+    createdAt: nowDefault.toISOString(),
+    updatedAt: nowDefault.toISOString(),
+    due: {
+      originalInput: "Saturday 4pm",
+      parsedDate: daysFromNow(2, 16), // near future
     },
-    {
-      id: "4",
-      title: "Play video games",
-      createdAt: "2025-10-23T21:30:00Z",
-      updatedAt: "2025-10-23T21:45:00Z",
-      due: {
-        originalInput: "tomorrow 5pm",
-        parsedDate: "2025-10-31T17:00:00Z",
-      },
-      completed: false,
-      focused: false,
-      deleted: false,
+    completed: false,
+    focused: false,
+    deleted: false,
+  },
+  {
+    id: "4",
+    title: "Plan weekend trip",
+    createdAt: nowDefault.toISOString(),
+    updatedAt: nowDefault.toISOString(),
+    due: {
+      originalInput: "Monday morning",
+      parsedDate: daysFromNow(4, 9), // near future
     },
-  ];
+    completed: false,
+    focused: false,
+    deleted: false,
+  },
+];
 
   
 
@@ -763,7 +770,7 @@ const handleCheck = (task, fromCompleted) => {
       setTasks(prev => prev.filter(t => t.id !== task.id));
       setCompletedTasks(prev => [{ ...task, completed: true }, ...prev]);
       setIsCompletedTasksOpen(true);
-    }, 160);
+    }, 360);
   } else {
     setTimeout(() => {
           setCompletedTasks(prev => prev.filter(t => t.id !== task.id));
@@ -1156,8 +1163,11 @@ useEffect(() => {
   }
   onClick={() => {
     if (isPast) return; // prevent selection
-    setSelectedDate(clone);
+    setTimeout(() => {
+          setSelectedDate(clone);
     setCalendarOpen(false);
+    }, 40);
+
   }}
 >
   {format(day, "d")}

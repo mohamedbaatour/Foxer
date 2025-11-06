@@ -1,5 +1,3 @@
-
-
 :root {
   --color-bg: #0b0b0c;
   --color-surface: #161618;
@@ -18,65 +16,104 @@
   --color-warning: #dab751;
   --color-success: #22c55e;
 
-  --mood-yellow: rgba(145, 255, 0, 0.012); 
-  --mood-red:    rgba(247, 74, 65, 0.012);
-  --mood-green:  rgba(0, 255, 0, 1);
-
+  --mood-yellow: rgba(145, 255, 0, 0.012);
+  --mood-red: rgba(247, 74, 65, 0.012);
+  --mood-green: rgba(0, 255, 0, 1);
 
   --bg-grad: linear-gradient(to bottom, #1b120c 0%, #0b0b0c 35%, #0b0b0c 100%);
-  --bg-radial-top: rgba(255, 200, 150, 0.02); 
+  --bg-radial-top: rgba(255, 200, 150, 0.02);
   --mood-top-default: #1b120c;
-  --mood-top: var(--mood-top-default); 
+  --mood-top: var(--mood-top-default);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-bg: #F9F9F9;
-    --color-surface: #FFFFFF;
-    --color-surface-2: #F2F2F2;
-    --color-surface-3: #EDEDED;
-    --color-border: #E5E5E5;
-    --color-border-2: #DADADA;
+    --color-bg: #f9f9f9;
+    --color-surface: #ffffff;
+    --color-surface-2: #f2f2f2;
+    --color-surface-3: #ededed;
+    --color-border: #e5e5e5;
+    --color-border-2: #dadada;
 
     --color-text-primary: #181818;
-    --color-text-secondary: #4A4A4A;
-    --color-text-muted: #7A7A7A;
+    --color-text-secondary: #4a4a4a;
+    --color-text-muted: #7a7a7a;
 
-    --color-accent: #10A37F;
-    --color-accent-hover: #0E8E72;
-    --color-error: #B32626;
-    --color-warning: #AD771E;
+    --color-accent: #10a37f;
+    --color-accent-hover: #0e8e72;
+    --color-error: #b32626;
+    --color-warning: #ad771e;
     --color-success: #059669;
-
 
     --mood-yellow: rgba(255, 255, 0, 0.05);
     --mood-red: rgba(255, 0, 0, 0.05);
     --mood-green: rgba(0, 200, 100, 0.06);
 
     /* Light theme paints */
-    --bg-grad: linear-gradient(to bottom, #ffffff 0%, #f7f7f8 35%, #f7f7f8 100%);
+    --bg-grad: linear-gradient(
+      to bottom,
+      #ffffff 0%,
+      #f7f7f8 35%,
+      #f7f7f8 100%
+    );
     --bg-radial-top: rgba(0, 0, 0, 0.03);
     --mood-top-default: #ffffff;
     --mood-top: var(--mood-top-default);
   }
 }
 
+/* Modern custom scrollbar (WebKit browsers) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
 
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-2);
+  border-radius: 8px;
+  border: 2px solid var(--color-surface);
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-surface);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-2) var(--color-surface);
+}
+
+@media (prefers-color-scheme: light) {
+  * {
+    scrollbar-color: var(--color-border-2) var(--color-surface);
+  }
+}
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   background: radial-gradient(
-    ellipse at 50% 0%,
-    var(--bg-radial-top),
-    transparent 70%
-  ) no-repeat;
+      ellipse at 50% 0%,
+      var(--bg-radial-top),
+      transparent 70%
+    )
+    no-repeat;
   background-size: cover;
   pointer-events: none;
   z-index: 0;
 }
-
 
 body {
   background: var(--bg-grad) no-repeat fixed;
@@ -104,11 +141,14 @@ body::after {
   background: linear-gradient(to bottom, var(--mood-top) 0%, transparent 42%);
 }
 
-body[data-mood]::after { opacity: 1; }
+body[data-mood]::after {
+  opacity: 1;
+}
 
-.tasks-container { position: relative; z-index: 1; }
-
-
+.tasks-container {
+  position: relative;
+  z-index: 1;
+}
 
 #mood-layer {
   position: fixed;
@@ -116,7 +156,6 @@ body[data-mood]::after { opacity: 1; }
   pointer-events: none;
   z-index: 0;
 }
-
 
 #mood-layer .mood {
   position: absolute;
@@ -129,7 +168,6 @@ body[data-mood]::after { opacity: 1; }
     transparent 42%
   );
 }
-
 
 ::selection {
   background-color: var(--color-text-secondary);
@@ -144,25 +182,24 @@ p {
   -moz-osx-font-smoothing: grayscale;
 }
 
-
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
 
-
-
 @font-face {
-  font-family: 'Switzer';
-  src: url('./assets/fonts/Switzer_Complete/Switzer_Complete/Fonts/TTF/Switzer-Variable.ttf') format('truetype');
+  font-family: "Switzer";
+  src: url("./assets/fonts/Switzer_Complete/Switzer_Complete/Fonts/TTF/Switzer-Variable.ttf")
+    format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Switzer';
-  src: url('./assets/fonts/Switzer_Complete/Switzer_Complete/Fonts/TTF/Switzer-VariableItalic.ttf') format('truetype');
+  font-family: "Switzer";
+  src: url("./assets/fonts/Switzer_Complete/Switzer_Complete/Fonts/TTF/Switzer-VariableItalic.ttf")
+    format("truetype");
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;

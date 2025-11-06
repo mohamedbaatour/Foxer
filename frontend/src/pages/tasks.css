@@ -256,7 +256,7 @@
 .calendar-day.disabled {
   color: var(--color-surface-3);
   pointer-events: none;
-  cursor: not-allowed;
+  cursor: no-drop;
 }
 
 .calendar-day.selected {
@@ -501,7 +501,7 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 10;
   box-shadow: #0000006b 0px 0px 20px 0px;
 }
