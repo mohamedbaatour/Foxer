@@ -18,6 +18,7 @@ import { ReactComponent as Sunrise } from "../icons/sunrise.svg";
 import { ReactComponent as Dots } from "../icons/dots.svg";
 import { ReactComponent as Drag } from "../icons/drag.svg";
 import { ReactComponent as Check } from "../icons/check.svg";
+import {ReactComponent as CheckMark } from "../icons/check-mark.svg";
 import {ReactComponent as Edit } from "../icons/edit.svg";
 import {ReactComponent as Duplicate } from "../icons/duplicate.svg";
 import {ReactComponent as Delete } from "../icons/delete.svg";
@@ -27,20 +28,18 @@ import {ReactComponent as ArrowDown } from "../icons/arrow-down.svg";
 import {ReactComponent as ArrowLeft} from "../icons/arrow-left.svg"
 import {ReactComponent as ArrowRight} from "../icons/arrow-right.svg"
 
+
 import confetti from "canvas-confetti";
 
 import Selecto from "react-selecto";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 import dayjs from "dayjs";
-import Popper from "@mui/material/Popper";
-import TextField from "@mui/material/TextField";
-import Box from "@mui/material/Box";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   addDays, addMonths, subMonths, isSameMonth, isSameDay, format
 } from "date-fns"
+
+
 
 const gridV = {
   hidden: { opacity: 0 },
@@ -657,7 +656,7 @@ const getTaskDateClass = (task) => {
   const now = new Date();
   const dueDate = new Date(task.due.parsedDate);
   const diffMs = dueDate - now;
-  const diffDays = diffMs / (1000 * 60 * 60 * 48);
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
   if (diffDays < 0) {
     return "task-date-error";
@@ -949,6 +948,37 @@ useEffect(() => {
   return () => document.removeEventListener("pointerdown", handleOutside)
 }, [calendarOpen, selectedDate])
 
+useEffect(() => {
+  if (!timePickerOpen) return;
+
+  const now = new Date();
+  const idx = Math.round((now.getHours() * 60 + now.getMinutes()) / 30);
+  const targetEl = document.querySelector(`.time-option:nth-child(${idx + 1})`);
+  const container = document.querySelector(".time-picker-dropdown");
+  if (!targetEl || !container) return;
+
+  // delay to ensure dropdown rendered
+  setTimeout(() => {
+    const targetOffset =
+      targetEl.offsetTop - container.clientHeight / 2 + targetEl.clientHeight / 2;
+    const start = container.scrollTop;
+    const diff = targetOffset - start;
+    const duration = 620; // ms
+    const startTime = performance.now();
+
+    const animate = (nowTime) => {
+      const t = Math.min((nowTime - startTime) / duration, 1);
+      const easeOutCubic = 1 - Math.pow(1 - t, 3);
+      container.scrollTop = start + diff * easeOutCubic;
+      if (t < 1) requestAnimationFrame(animate);
+    };
+
+    requestAnimationFrame(animate);
+  }, 120);
+}, [timePickerOpen]);
+
+
+
 
   return (
     <div className="tasks-container">
@@ -1051,24 +1081,99 @@ useEffect(() => {
       ) : (
         <div  className="task-center">
           <motion.div
-          key="date"
-          className="task-date-chip task-clock-chip"
-                    initial={{ opacity: 0, y: 6, x: 4}}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: -6, x: 4,}}
-          transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
-          ref={timePickerAnchorRef}
-          onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }} // <- prevent blur so input remains focused
-          onClick={(e) => {
-            e.stopPropagation();
-            setTimePickerOpen((s) => !s);
-          }}
-          role="button"
-          aria-haspopup="dialog"
-          aria-expanded={timePickerOpen}
-        >
-          <Clock className="chip-ico clock-ico"/>
-        </motion.div>
+          layout
+  key="clock"
+  className={`task-date-chip task-clock-chip ${selectedTime ? "expanded" : ""}`}
+  initial={{ opacity: 0, y: 6, x: 4 }}
+  animate={{ opacity: 1, y: 0, x: 0 }}
+  exit={{ opacity: 0, y: -6, x: 4 }}
+  transition={{ type: "spring", stiffness: 520, damping: 36, mass: 0.7 }}
+  ref={timePickerAnchorRef}
+  onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
+  onClick={(e) => {
+    e.stopPropagation();
+    setTimePickerOpen((s) => !s);
+  }}
+  role="button"
+  aria-haspopup="dialog"
+  aria-expanded={timePickerOpen}
+>
+  <motion.div    
+   className="clock-ico-container"
+initial={{ opacity: 0, x: 8, scale: 0.96 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: 8, scale: 0.96 }}
+        transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+          >
+  <Clock className="chip-ico clock-ico" />
+</motion.div>
+  {selectedTime && (
+    <motion.span
+      key="time-label"
+      className="chip-time-label"
+      initial={{ opacity: 0, x: 6 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 6 }}
+              transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+    >
+      {selectedTime.format("h:mm A")}
+    </motion.span>
+  )}
+
+  <AnimatePresence>
+    {timePickerOpen && (
+      <motion.div
+        key="custom-time-picker"
+        className="time-picker-dropdown"
+        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 8, scale: 0.96 }}
+        transition={{ duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+        style={{
+          position: "absolute",
+          top: timePickerAnchorRef.current?.offsetTop + 42 || 0,
+          right: 0,
+          zIndex: 3100,
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {Array.from({ length: 48 }, (_, i) => {
+          const totalMinutes = i * 30;
+          const hour24 = Math.floor(totalMinutes / 60);
+          const minute = totalMinutes % 60;
+          const label = new Date(0, 0, 0, hour24, minute).toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
+
+          const isSelected =
+            selectedTime &&
+            selectedTime.hour() === hour24 &&
+            selectedTime.minute() === minute;
+
+          return (
+            <div
+            key={`${hour24}-${minute}`}
+                className={`time-option ${isSelected ? "selected" : ""}`}
+                onClick={() => {
+                  const newTime = dayjs().hour(hour24).minute(minute).second(0);
+                  setSelectedTime(newTime);
+                  setTimePickerOpen(false);
+               }}
+>
+  <span>{label}</span>
+  {isSelected && <CheckMark className="time-check" />}
+</div>
+
+          );
+        })}
+      </motion.div>
+    )}
+  </AnimatePresence>
+</motion.div>
+
 
 
 
@@ -1092,19 +1197,29 @@ useEffect(() => {
   role="button"
           aria-haspopup="dialog"
         >
-          <motion.div    initial={{ opacity: 0, y: 0, x: -10}}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: 0, x: -10,}}
-          transition={{ delay: 0.1 }}>
+          <motion.div    
+          // initial={{ opacity: 0, y: 0, x: -10}}
+          // animate={{ opacity: 1, y: 0, x: 0 }}
+          // exit={{ opacity: 0, y: 0, x: -10,}}
+          // transition={{ delay: 0.1 }}
+initial={{ opacity: 0, x: 8, scale: 0.96 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: 8, scale: 0.96 }}
+        transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+          >
           <Calendar className="chip-ico calendar-ico"/>
           </motion.div>
 
           <motion.div className="task-date-chip-text"
           
-          initial={{ opacity: 0, y: 0, x: 10}}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: 0, x: 10,}}
-          transition={{ delay: 0.1 }}
+          // initial={{ opacity: 0, y: 0, x: 10}}
+          // animate={{ opacity: 1, y: 0, x: 0 }}
+          // exit={{ opacity: 0, y: 0, x: 10,}}
+          // transition={{ delay: 0.1 }}
+          initial={{ opacity: 0, x: 8, scale: 0.96 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, x: 8, scale: 0.96 }}
+        transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
           >    {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
           
         </motion.div>

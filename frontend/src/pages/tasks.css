@@ -160,7 +160,49 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
-.chip-ico {
+.time-picker-dropdown {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 180px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+  scroll-behavior: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.time-option {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-2);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-option:hover {
+  background: var(--color-surface-3);
+}
+
+.time-option.selected {
+  background-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.time-option.selected:hover {
+  background-color: var(--color-border-2);
+}
+
+.time-check {
+  width: 16px;
+  height: 16px;
 }
 
 .calendar-ico {
@@ -281,6 +323,19 @@
   color: var(--color-text-primary);
   width: 16px;
   height: 16px;
+}
+
+.clock-ico-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px !important;
+  min-height: 16px !important;
+}
+
+.clock-ico {
+  min-width: 16px;
+  min-height: 16px;
 }
 
 /* .drag-handle-icon.lite svg{ margin-top:-2px; width:21px; height:21px; }
@@ -531,7 +586,7 @@
   border-radius: 8px;
   transition: background 0.2s;
   background: transparent;
-
+  cursor: pointer;
   position: relative;
 }
 
@@ -599,7 +654,6 @@
   opacity: 1;
 
   margin-left: 0;
-  cursor: pointer;
 }
 
 .task-time {
