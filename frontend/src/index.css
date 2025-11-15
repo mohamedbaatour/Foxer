@@ -1,12 +1,12 @@
 :root {
   --color-bg: #0f0b0a;
   --color-surface: #161618;
-  --color-surface-2: #1c1c1e;
+  --color-surface-2: #1f1f22;
   --color-surface-3: #28282b;
   --color-border: #2f2f31;
   --color-border-2: #3a3a3c;
 
-  --color-text-primary: #dbe9f4;
+  --color-text-primary: #edf2f8;
   --color-text-secondary: #a1a1aa;
   --color-text-muted: #71717a;
 
@@ -20,7 +20,7 @@
   --mood-red: rgba(247, 74, 65, 0.012);
   --mood-green: rgba(0, 255, 0, 1);
 
-  --bg-grad: linear-gradient(to bottom, #1b120c 0%, #0b0b0c 35%, #0b0b0c 100%);
+  --bg-grad: linear-gradient(to bottom, #1b120c 0%, #121212 35%, #121212 100%);
   --bg-radial-top: rgba(255, 200, 150, 0.02);
   --mood-top-default: #1b120c;
   --mood-top: var(--mood-top-default);

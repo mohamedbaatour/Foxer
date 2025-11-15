@@ -1127,8 +1127,8 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
         className="time-picker-dropdown"
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.96 }}
-        transition={{ duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+        exit={{ opacity: 0, y: 8, scale: 0.96,}}
+        transition={{ duration: 0.3, ease: [0.25, 0.8, 0.3, 1] }}
         style={{
           position: "absolute",
           top: timePickerAnchorRef.current?.offsetTop + 42 || 0,
@@ -1209,20 +1209,22 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
           >
           <Calendar className="chip-ico calendar-ico"/>
           </motion.div>
-
+          <AnimatePresence
+          mode="wait"
+          initial={false}
+          >
           <motion.div className="task-date-chip-text"
           
           // initial={{ opacity: 0, y: 0, x: 10}}
           // animate={{ opacity: 1, y: 0, x: 0 }}
           // exit={{ opacity: 0, y: 0, x: 10,}}
           // transition={{ delay: 0.1 }}
-          initial={{ opacity: 0, x: 8, scale: 0.96 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        exit={{ opacity: 0, x: 8, scale: 0.96 }}
-        transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+
           >    {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
           
+          </AnimatePresence>
         </motion.div>
+        
 <AnimatePresence>
   {calendarOpen && (
     <motion.div
@@ -1231,7 +1233,7 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
       initial={{ opacity: 0, y: 8, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.95 }}
-      transition={{ duration: 0.25, ease: [0.25, 0.8, 0.3, 1] }}
+      transition={{ duration: 0.3, ease: [0.25, 0.8, 0.3, 1] }}
       className="calendar-popup"
       style={{
         position: "absolute",

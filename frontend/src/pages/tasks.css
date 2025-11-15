@@ -160,6 +160,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
+.task-date-chip-text {
+  display: flex;
+}
+
 .time-picker-dropdown {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
