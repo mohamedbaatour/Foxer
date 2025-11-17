@@ -428,6 +428,7 @@
   transition: background-color 0.2s ease-in-out;
   overflow: visible;
   position: relative;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.025);
 }
 
 .task-item:hover {
