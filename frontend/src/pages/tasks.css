@@ -99,8 +99,6 @@
   cursor: pointer;
 }
 
-/* :root { --input-left-col: 44px; }  */
-
 .task-add-input {
   margin-top: 20px;
   width: 100%;
@@ -112,7 +110,6 @@
   border-radius: 12px;
   font-weight: 500;
   font-family: "Switzer", sans-serif;
-  /* border: 0.5px solid var(--color-border); */
   box-sizing: border-box;
   z-index: 1;
   padding: 16px 16px 16px 24px;
@@ -135,7 +132,6 @@
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  /* pointer-events: none; */
 }
 
 .task-date-chip {
@@ -342,19 +338,16 @@
   min-height: 16px;
 }
 
-/* .drag-handle-icon.lite svg{ margin-top:-2px; width:21px; height:21px; }
-.check-square.lite{ width:17px; height:17px; border-radius:4px; background: var(--color-border); } */
-
 .task-input-left {
   position: absolute;
-  left: 7px; /* matches the base left padding */
+  left: 7px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
   width: var(--input-left-col);
-  pointer-events: none; /* purely decorative; keeps focus on input */
+  pointer-events: none;
   z-index: 0;
   cursor: default;
 }
@@ -607,8 +600,8 @@
   border-radius: 10px;
   padding: 6px;
   z-index: 99999;
-  overflow: hidden; /* prevents clip corners from flashing */
-  transform-origin: top right; /* smoother scaleY accordion */
+  overflow: hidden;
+  transform-origin: top right;
   will-change: transform, opacity;
 }
 
@@ -684,27 +677,22 @@
 .task-date-error {
   color: var(--color-error);
   background-color: rgba(179, 38, 38, 0.1);
-  /* animation: pulse-twice 8s ease-out infinite; */
 }
 
 @keyframes pulse-twice {
   0%,
   10% {
     background-color: rgba(179, 38, 38, 0.1);
-    /* box-shadow: 0 0 0 0 rgba(179, 38, 38, 0.4); */
   }
   5% {
     background-color: rgba(179, 38, 38, 0.25);
-    /* box-shadow: 0 0 0 6px rgba(179, 38, 38, 0); */
   }
   15% {
     background-color: rgba(179, 38, 38, 0.25);
-    /* box-shadow: 0 0 0 6px rgba(179, 38, 38, 0); */
   }
   20%,
   100% {
     background-color: rgba(179, 38, 38, 0.1);
-    /* box-shadow: 0 0 0 0 rgba(179, 38, 38, 0); */
   }
 }
 
@@ -775,10 +763,8 @@
 .scroll-to-completed {
   position: fixed;
   bottom: 28px;
-  left: 49%; /* anchor horizontally at page center */
-  transform: translateX(
-    calc(310px + 46px)
-  ); /* 310 = half of 620px column width; 16px = spacing gap */
+  left: 49%;
+  transform: translateX(calc(310px + 46px));
   width: 32px;
   height: 32px;
   border-radius: 50%;

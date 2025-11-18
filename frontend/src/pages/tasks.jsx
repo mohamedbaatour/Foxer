@@ -46,7 +46,7 @@ const gridV = {
   show: { opacity: 1, transition: { delayChildren: 0.03, staggerChildren: 0.012 } }
 };
 const cellV = {
-  hidden: { opacity: 0, y: 6 },         // no opacity here → won't fight `.dim`
+  hidden: { opacity: 0, y: 6 },
   show:   { opacity: 1, y: 0, transition: { type: "spring", stiffness: 520, damping: 34 } }
 };
 
@@ -56,7 +56,6 @@ const CLOSE_ALL_EVENT = "task-dots-close-all";
 const EASE_SOFT = [0.25, 0.8, 0.3, 1];
 const POP = { type: "spring", stiffness: 420, damping: 42, mass: 0.7 };
 
-// Shell: soft rise & fade-in, gentle scale growth
 const menuShell = {
   open: {
     opacity: 1,
@@ -88,7 +87,6 @@ const itemsWrap = {
   closed:{ transition: { staggerChildren: 0.045, staggerDirection: -1 } }
 };
 
-// Items: calm float upward with gentle spring; fade out softly
 const menuItem = {
   open: {
     opacity: 1,
@@ -109,15 +107,14 @@ const menuItem = {
 
 
 
-// Sortable Task Item
 const SortableTaskItem = React.memo(function SortableTaskItem({
   task,
   onCheck,
-  onDelete, // <-- added
-  onDuplicate, // <-- added
+  onDelete,
+  onDuplicate, 
   isOverlay = false,
   isDraggingGlobal = false, 
-  isDeleting = false, // <-- added
+  isDeleting = false,
   ...props
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -151,13 +148,10 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
   const menuRef = useRef(null);
 
-  // Close on outside click
-
     const [menuOpen, setMenuOpen] = React.useState(false);
 
     React.useEffect(() => {
   const handler = (e) => {
-    // If some OTHER task opened, close me.
     if (e.detail !== task.id) setMenuOpen(false);
   };
   window.addEventListener(CLOSE_ALL_EVENT, handler);
@@ -170,7 +164,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     const onDocPointerDown = (e) => {
       if (!menuRef.current) return;
       if (!menuRef.current.contains(e.target)) {
-        setMenuOpen(false); // triggers AnimatePresence exit
+        setMenuOpen(false); 
       }
     };
 
@@ -183,21 +177,16 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   return (
     <motion.div
       ref={setNodeRef}
-      className={`task-item selectable ${ (isDragging || isOverlay) ? "task-item-dragged" : "" } ${isDeleting ? 'deleting' : ''}`} // <-- add deleting class
+      className={`task-item selectable ${ (isDragging || isOverlay) ? "task-item-dragged" : "" } ${isDeleting ? 'deleting' : ''}`}
       layout={!disableLayout}
       layoutId={!disableLayout ? task.id : undefined}
-      /* When isDeleting is true, drive the delete animation via `animate`
-         so it runs while the item is still in the list. After your existing
-         timeout (DELETE_ANIM_MS) the item is removed from state. */
       transition={!disableLayout ? { type: "spring", stiffness: 700, damping: 50 } : { duration: 0 }}
       animate={isDeleting ? { opacity: 0, y: -8, scale: 0.985 } : undefined}
-      // keep exit as a fallback for normal AnimatePresence removals
       exit={{ opacity: 0, y: -8, scale: 0.985, transition: { duration: 0.18 } }}
       style={{
         transform: transform ? CSS.Transform.toString(transform) : undefined,
         transition,
         opacity: isDragging && !isOverlay ? 0 : 1,
-        // prevent pointer events during deletion
         pointerEvents: isDeleting ? "none" : undefined,
         willChange: isDragging ? "transform" : "auto",
       }}
@@ -249,7 +238,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
             setTimeout(() => {
               setMenuOpen((prev) => {
            const next = !prev;
-           // If we're opening this one, broadcast to others to close themselves.
            if (next) {
              window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: task.id }));
            }
@@ -263,7 +251,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
             <Dots />
           </span>
 
-          {/* Plain, instant dropdown — no AnimatePresence, no motion, no variants */}
 <AnimatePresence initial={false} mode="wait">
   {menuOpen && (
     <motion.div
@@ -355,17 +342,15 @@ function DroppableContainer({ id, children }) {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
 
-  // MUI time-picker state (dayjs)
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const timePickerAnchorRef = useRef(null);
-  const [selectedTime, setSelectedTime] = useState(null); // dayjs() or null
+  const [selectedTime, setSelectedTime] = useState(null);
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const saved = localStorage.getItem("selectedDate");
     return saved ? new Date(saved) : new Date();
 });
 
-  // close popper on outside click (safety)
   useEffect(() => {
     if (!timePickerOpen) return;
     const onDocDown = (e) => {
@@ -385,10 +370,9 @@ function DroppableContainer({ id, children }) {
     try {
       if (selectedDate) localStorage.setItem("selectedDate", selectedDate.toISOString());
      else localStorage.removeItem("selectedDate");
-    } catch (e) { /* noop */ }
+    } catch (e) { }
   }, [selectedDate]);
 
-  // Add task helper — creates a new task and updates state (localStorage persists via effects)
   const addTask = (title) => {
   const nowIso = new Date().toISOString();
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -421,7 +405,6 @@ function DroppableContainer({ id, children }) {
 
   setTasks((prev) => [newTask, ...prev]);
 
-  // 🔥 Reset to today after adding
   setSelectedDate(new Date());
   setCalendarMonth(new Date());
 
@@ -430,8 +413,7 @@ function DroppableContainer({ id, children }) {
   setTimePickerOpen(false);
 };
 
-  
-  // Duplicate a task in-place (no animation)
+
   const duplicateTask = (id, fromCompleted = false) => {
     if (fromCompleted) {
       const idx = completedTasks.findIndex((t) => t.id === id);
@@ -484,7 +466,7 @@ const defaultTasks = [
     updatedAt: nowDefault.toISOString(),
     due: {
       originalInput: "today 6pm",
-      parsedDate: daysFromNow(0, 18), // today
+      parsedDate: daysFromNow(0, 18),
     },
     completed: false,
     focused: true,
@@ -497,7 +479,7 @@ const defaultTasks = [
     updatedAt: nowDefault.toISOString(),
     due: {
       originalInput: "tomorrow 7am",
-      parsedDate: daysFromNow(1, 7), // tomorrow
+      parsedDate: daysFromNow(1, 7),
     },
     completed: false,
     focused: false,
@@ -510,7 +492,7 @@ const defaultTasks = [
     updatedAt: nowDefault.toISOString(),
     due: {
       originalInput: "Saturday 4pm",
-      parsedDate: daysFromNow(2, 16), // near future
+      parsedDate: daysFromNow(2, 16),
     },
     completed: false,
     focused: false,
@@ -523,7 +505,7 @@ const defaultTasks = [
     updatedAt: nowDefault.toISOString(),
     due: {
       originalInput: "Monday morning",
-      parsedDate: daysFromNow(4, 9), // near future
+      parsedDate: daysFromNow(4, 9),
     },
     completed: false,
     focused: false,
@@ -567,7 +549,6 @@ const defaultTasks = [
     };
   }, []);
  
-  // Close task input (and timepicker) on Escape
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape" || e.key === "Esc") {
@@ -576,7 +557,6 @@ const defaultTasks = [
           inputRef.current?.blur();
           setTimePickerOpen(false);
         }
-        // Close any open task dots dropdowns across all SortableTaskItem instances
         window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }));
       }
     };
@@ -612,7 +592,6 @@ const defaultTasks = [
       hour12: false,
     });
 
-    // compare only year/month/day to get day-diff
     const today = new Date();
     const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const dateMid = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -687,17 +666,14 @@ const getTaskDateClass = (task) => {
     setIsCompletedTasksOpen(!isCompletedTasksOpen);
   };
 
-  // DnDKit logic
   const [activeId, setActiveId] = useState(null);
 
   const [isDragging, setIsDragging] = useState(false);
 
-  // deletion buffer to keep an item in the DOM while its exit animation runs
   const [deletingIds, setDeletingIds] = useState([]);
   const DELETE_ANIM_MS = 250;
 
   const deleteTaskWithAnimation = (id, fromCompleted = false) => {
-    // mark as deleting so item gets deleting class and exit animation
     setDeletingIds((s) => [...s, id]);
     setTimeout(() => {
       if (fromCompleted) {
@@ -730,7 +706,6 @@ const getTaskDateClass = (task) => {
   const isActiveInCompleted = completedTasks.find((t) => t.id === activeId);
   const isOverInCompleted = completedTasks.find((t) => t.id === overId);
 
-  // Reordering within the same list
   if (isActiveInTasks && isOverInTasks) {
     const oldIndex = tasks.findIndex((t) => t.id === activeId);
     const newIndex = tasks.findIndex((t) => t.id === overId);
@@ -854,7 +829,6 @@ const setBgMood = (mood) => {
   const idle    = activeBufRef.current === 'a' ? bufB : bufA;
 
   if (!mood) {
-    // Fade out current active overlay smoothly
     active.style.opacity = '0';
     currentMoodRef.current = null;
     return;
@@ -919,19 +893,14 @@ useEffect(() => {
     if (!completedEl) return;
     const rect = completedEl.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    // Show button if completed section’s top is below viewport bottom
     setShowScrollBtn(rect.top > viewportHeight * 0.9);
   };
   window.addEventListener("scroll", onScroll);
-  onScroll(); // run once at mount
+  onScroll();
   return () => window.removeEventListener("scroll", onScroll);
 }, []);
         const [calendarMonth, setCalendarMonth] = useState(new Date())
 const [calendarOpen, setCalendarOpen] = useState(false)
-// const [selectedDate, setSelectedDate] = useState(() => {
-//     const saved = localStorage.getItem("selectedDate");
-//     return saved ? new Date(saved) : new Date();
-// });
 const calendarAnchorRef = useRef(null)
 const calendarPopRef = useRef(null)
 
@@ -957,13 +926,12 @@ useEffect(() => {
   const container = document.querySelector(".time-picker-dropdown");
   if (!targetEl || !container) return;
 
-  // delay to ensure dropdown rendered
   setTimeout(() => {
     const targetOffset =
       targetEl.offsetTop - container.clientHeight / 2 + targetEl.clientHeight / 2;
     const start = container.scrollTop;
     const diff = targetOffset - start;
-    const duration = 620; // ms
+    const duration = 620;
     const startTime = performance.now();
 
     const animate = (nowTime) => {
@@ -1022,7 +990,6 @@ useEffect(() => {
         </motion.div>
       </div>
 <div className="task-input-container">
-  {/* left side (you already added) */}
   <AnimatePresence initial={false}>
     {isInputFocused && (
       <motion.div
@@ -1040,7 +1007,6 @@ useEffect(() => {
     )}
   </AnimatePresence>
 
-  {/* INPUT with animated ring/elevation */}
   <motion.input
     ref={inputRef}
     placeholder="Create a new task..."
@@ -1054,7 +1020,6 @@ useEffect(() => {
         const val = inputRef.current?.value?.trim();
         if (val) {
           addTask(val);
-         // deselect input after adding
          setIsInputFocused(false);
          inputRef.current?.blur();
          setTimePickerOpen(false);
@@ -1063,7 +1028,6 @@ useEffect(() => {
     }}
   />
 
-  {/* right adornment: A → date chip */}
   <div className="task-input-right">
     <AnimatePresence initial={false} mode="wait">
       {!isInputFocused ? (
@@ -1175,11 +1139,6 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
 </motion.div>
 
 
-
-
-        {/* MUI TimePicker popper */}
-
-
         <motion.div
           key="date"
           className="task-date-chip"
@@ -1191,17 +1150,13 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
               e.stopPropagation()
               setCalendarOpen(s => !s)
               
-            }}   // ← toggle calendar
+            }}
   ref={calendarAnchorRef}        
             onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}  
   role="button"
           aria-haspopup="dialog"
         >
           <motion.div    
-          // initial={{ opacity: 0, y: 0, x: -10}}
-          // animate={{ opacity: 1, y: 0, x: 0 }}
-          // exit={{ opacity: 0, y: 0, x: -10,}}
-          // transition={{ delay: 0.1 }}
 initial={{ opacity: 0, x: 8, scale: 0.96 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         exit={{ opacity: 0, x: 8, scale: 0.96 }}
@@ -1213,15 +1168,8 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
           mode="wait"
           initial={false}
           >
-          <motion.div className="task-date-chip-text"
-          
-          // initial={{ opacity: 0, y: 0, x: 10}}
-          // animate={{ opacity: 1, y: 0, x: 0 }}
-          // exit={{ opacity: 0, y: 0, x: 10,}}
-          // transition={{ delay: 0.1 }}
-
-          >    {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
-          
+          <motion.div className="task-date-chip-text">
+            {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
           </AnimatePresence>
         </motion.div>
         
@@ -1279,7 +1227,7 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
     (isSameDay(day, selectedDate) ? " selected" : "")
   }
   onClick={() => {
-    if (isPast) return; // prevent selection
+    if (isPast) return;
     setTimeout(() => {
           setSelectedDate(clone);
     setCalendarOpen(false);
@@ -1305,7 +1253,6 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
               <button className="calendar-arrow-container" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}><ArrowRight className="calendar-arrow" /></button>
             </div>
 
-            {/* re-animates grid on open and on month change */}
             <motion.div
               key={calendarMonth.getTime()}
               variants={gridV}
@@ -1360,8 +1307,8 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
       onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
       onMouseLeave={() => setBgMood(null)}
       onCheck={() => handleCheck(task, false)}
-      onDelete={(id) => deleteTaskWithAnimation(id, false)} // animated delete
-      onDuplicate={(id) => duplicateTask(id, false)} // <-- added
+      onDelete={(id) => deleteTaskWithAnimation(id, false)}
+      onDuplicate={(id) => duplicateTask(id, false)}
       isDraggingGlobal={isDragging}
       isDeleting={deletingIds.includes(task.id)}
       
@@ -1420,8 +1367,8 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
                   dateClass={getTaskDateClass(task)}
                   timeClass={getTaskTimeClass(task)}
                   onCheck={() => handleCheck(task, true)}
-                  onDelete={(id) => deleteTaskWithAnimation(id, true)} // animated delete
-                  onDuplicate={(id) => duplicateTask(id, true)} // <-- added
+                  onDelete={(id) => deleteTaskWithAnimation(id, true)}
+                  onDuplicate={(id) => duplicateTask(id, true)}
                   isDraggingGlobal={isDragging}
                   isDeleting={deletingIds.includes(task.id)}
                   
