@@ -424,16 +424,16 @@
   box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.025);
 }
 
-.task-item:hover {
+/* .task-item:hover {
+  background-color: var(--color-surface-2);
+} */
+
+.task-item.selected {
   background-color: var(--color-surface-2);
 }
 
-.task-item.selected {
-  background-color: var(--color-surface-3);
-}
-
 .task-item-dragged {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 10px 25px rgba(0, 0, 0, 0.25);
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25), 0 10px 25px rgba(0, 0, 0, 0.25); */
   z-index: 9999;
   border-color: rgba(255, 255, 255, 0.06);
   background-color: var(--color-surface-2);
