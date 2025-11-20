@@ -113,8 +113,11 @@
   box-sizing: border-box;
   z-index: 1;
   padding: 16px 16px 16px 24px;
-
-  transition: background-color 0.3s ease-in-out,
+  height: 52px;
+  overflow-y: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  transition: background-color 0.3s ease-in-out, padding-right 0.2s ease,
     padding-left 0.26s cubic-bezier(0.25, 0.8, 0.3, 1);
 }
 
@@ -467,7 +470,7 @@
 }
 
 .check-square {
-  width: 17px;
+  min-width: 17px;
   height: 17px;
   border-radius: 4px;
   background-color: var(--color-border);
@@ -523,6 +526,7 @@
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 0.1px;
+  text-align: left;
 }
 
 .task-item-right {

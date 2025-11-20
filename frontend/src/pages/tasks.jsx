@@ -28,6 +28,7 @@ import {ReactComponent as ArrowDown } from "../icons/arrow-down.svg";
 import {ReactComponent as ArrowLeft} from "../icons/arrow-left.svg"
 import {ReactComponent as ArrowRight} from "../icons/arrow-right.svg"
 
+import * as chrono from "chrono-node";
 
 import confetti from "canvas-confetti";
 
@@ -348,10 +349,8 @@ function DroppableContainer({ id, children }) {
   const timePickerAnchorRef = useRef(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const saved = localStorage.getItem("selectedDate");
-    return saved ? new Date(saved) : new Date();
-});
+const [selectedDate, setSelectedDate] = useState(() => new Date());
+
 
   useEffect(() => {
     if (!timePickerOpen) return;
@@ -368,12 +367,12 @@ function DroppableContainer({ id, children }) {
 
   
 
-  useEffect(() => {
-    try {
-      if (selectedDate) localStorage.setItem("selectedDate", selectedDate.toISOString());
-     else localStorage.removeItem("selectedDate");
-    } catch (e) { }
-  }, [selectedDate]);
+  // useEffect(() => {
+  //   try {
+  //     if (selectedDate) localStorage.setItem("selectedDate", selectedDate.toISOString());
+  //    else localStorage.removeItem("selectedDate");
+  //   } catch (e) { }
+  // }, [selectedDate]);
 
   const addTask = (title) => {
   const nowIso = new Date().toISOString();
@@ -1086,6 +1085,66 @@ useEffect(() => {
 }, [timePickerOpen]);
 
 
+const [nlDate, setNlDate] = useState(null);
+const [nlLabel, setNlLabel] = useState("");
+
+const [manualTimeSet, setManualTimeSet] = useState(false);
+const [manualDateSet, setManualDateSet] = useState(false);
+
+
+
+const liveParseNatural = (raw) => {
+  const results = chrono.parse(raw);
+
+  if (!results.length) {
+    if (!manualDateSet) setNlDate(null);
+    if (!manualTimeSet) setSelectedTime(null);
+    setNlLabel("");
+    return;
+  }
+
+  const r = results[0];
+  const dateObj = r.start.date();
+
+  // Update date only if user didn't manually override
+  if (!manualDateSet) {
+    setSelectedDate(dateObj);
+  }
+
+  // Update time only if user didn't manually override
+  if (!manualTimeSet) {
+    setSelectedTime(
+      dayjs().hour(dateObj.getHours()).minute(dateObj.getMinutes())
+    );
+  }
+
+  setNlDate(dateObj);
+  setNlLabel(dayjs(dateObj).format("ddd, DD MMM · HH:mm"));
+};
+
+
+
+useEffect(() => {
+  if (!inputRef.current) return;
+  
+  const updatePadding = () => {
+    const right = document.querySelector(".task-input-right");
+    if (!right) return;
+
+    const w = right.getBoundingClientRect().width;
+    inputRef.current.style.paddingRight = `${w + 20}px`; // 20 = breathing gap
+  };
+
+  updatePadding();
+
+  const ro = new ResizeObserver(updatePadding);
+  const right = document.querySelector(".task-input-right");
+  if (right) ro.observe(right);
+
+  return () => ro.disconnect();
+}, [isInputFocused, selectedTime, selectedDate, timePickerOpen, calendarOpen]);
+
+
 
 
   return (
@@ -1147,28 +1206,43 @@ useEffect(() => {
     )}
   </AnimatePresence>
 
-  <motion.input
-    ref={inputRef}
-    placeholder="Create a new task..."
-    className="task-add-input"
-    onFocus={() => setIsInputFocused(true)}
-    onBlur={() => setIsInputFocused(false)}
-    animate={isInputFocused ? 'focused' : 'idle'}
-    transition={{ duration: 0.22, ease: [0.25,0.8,0.3,1] }}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        const val = inputRef.current?.value?.trim();
-        if (val) {
-          addTask(val);
-         setIsInputFocused(false);
-         inputRef.current?.blur();
-         setTimePickerOpen(false);
-        }
+<motion.input
+  ref={inputRef}
+  placeholder="Create a new task..."
+  className="task-add-input"
+  onFocus={() => setIsInputFocused(true)}
+  onBlur={() => setIsInputFocused(false)}
+  animate={isInputFocused ? 'focused' : 'idle'}
+  transition={{ duration: 0.22, ease: [0.25,0.8,0.3,1] }}
+
+  onChange={(e) => {
+    const v = e.target.value;
+
+    // reset manual overrides when field is cleared
+    if (v.trim() === "") {
+      setManualTimeSet(false);
+      setManualDateSet(false);
+    }
+
+    liveParseNatural(v);
+  }}
+
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      const val = inputRef.current?.value?.trim();
+      if (val) {
+        addTask(val);
+        setIsInputFocused(false);
+        inputRef.current?.blur();
+        setTimePickerOpen(false);
       }
-    }}
-  />
+    }
+  }}
+/>
+
 
   <div className="task-input-right">
+    
     <AnimatePresence initial={false} mode="wait">
       {!isInputFocused ? (
         <motion.div
@@ -1211,18 +1285,21 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
           >
   <Clock className="chip-ico clock-ico" />
 </motion.div>
+  <AnimatePresence mode="wait" initial={false}>
   {selectedTime && (
     <motion.span
-      key="time-label"
+      key={selectedTime.format("HH:mm")} // unique key forces animation on change
       className="chip-time-label"
-      initial={{ opacity: 0, x: 6 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 6 }}
-              transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+      initial={{ opacity: 0, y: 6, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.92 }}
+      transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
     >
       {selectedTime.format("h:mm A")}
     </motion.span>
   )}
+</AnimatePresence>
+
 
   <AnimatePresence>
     {timePickerOpen && (
@@ -1264,6 +1341,7 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
                 onClick={() => {
                   const newTime = dayjs().hour(hour24).minute(minute).second(0);
                   setSelectedTime(newTime);
+                    setManualTimeSet(true);
                   setTimePickerOpen(false);
                }}
 >
@@ -1304,13 +1382,21 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
           >
           <Calendar className="chip-ico calendar-ico"/>
           </motion.div>
-          <AnimatePresence
-          mode="wait"
-          initial={false}
-          >
-          <motion.div className="task-date-chip-text">
-            {selectedDate ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }) : dateLabel}</motion.div>
-          </AnimatePresence>
+          <AnimatePresence mode="wait" initial={false}>
+  <motion.div
+    key={selectedDate ? selectedDate.toISOString().slice(0,10) : "none"}
+    className="task-date-chip-text"
+    initial={{ opacity: 0, y: 6, scale: 0.92 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: -6, scale: 0.92 }}
+    transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
+  >
+    {selectedDate
+      ? selectedDate.toLocaleDateString("en-US", { day: "numeric", month: "short" })
+      : dateLabel}
+  </motion.div>
+</AnimatePresence>
+
         </motion.div>
         
 <AnimatePresence>
@@ -1370,6 +1456,7 @@ initial={{ opacity: 0, x: 8, scale: 0.96 }}
     if (isPast) return;
     setTimeout(() => {
           setSelectedDate(clone);
+          setManualDateSet(true);
     setCalendarOpen(false);
     }, 40);
 
