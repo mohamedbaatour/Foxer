@@ -24,8 +24,9 @@ const itemVariants = {
         filter: "blur(0px)",
         transition: {
             type: "spring",
-            damping: 12,
-            stiffness: 100,
+            damping: 10,
+            stiffness: 50,
+            duration: 2.0,
         },
     },
 };

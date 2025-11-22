@@ -71,7 +71,7 @@ const cellV = {
 const CLOSE_ALL_EVENT = "task-dots-close-all";
 
 const EASE_SOFT = [0.25, 0.8, 0.3, 1];
-const POP = { type: "spring", stiffness: 420, damping: 42, mass: 0.7 };
+const POP = { type: "spring", stiffness: 420, damping: 42, mass: 0.7, delay: 0.03 };
 
 const menuShell = {
   open: {
@@ -1193,7 +1193,7 @@ const Tasks = () => {
               className="title-container"
             >
               {getIcon()}
-              <p className="title">{getGreeting()}, Foxer</p>
+              <p className="title">{getGreeting()}</p>
             </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -1264,7 +1264,7 @@ const Tasks = () => {
                             transition={{ type: "spring", bounce: 0.25, duration: 0.6 }}
                           />
                         )}
-                        <span className="theme-option-content">
+                        <span className={`theme-option-content${theme === "system" ? " selected" : ""}`}>
                           <SystemTheme className="theme-option-icon" /> System
                         </span>
                       </motion.button>
@@ -1283,7 +1283,7 @@ const Tasks = () => {
                             transition={{ type: "spring", bounce: 0.25, duration: 0.6 }}
                           />
                         )}
-                        <span className="theme-option-content">
+                        <span className={`theme-option-content${theme === "dark" ? " selected" : ""}`}>
                           <MoonTheme className="theme-option-icon" /> Dark
                         </span>
                       </motion.button>
@@ -1302,7 +1302,7 @@ const Tasks = () => {
                             transition={{ type: "spring", bounce: 0.25, duration: 0.6 }}
                           />
                         )}
-                        <span className="theme-option-content">
+                        <span className={`theme-option-content${theme === "light" ? " selected" : ""}`}>
                           <SunTheme className="theme-option-icon" /> Light
                         </span>
                       </motion.button>
@@ -1311,35 +1311,35 @@ const Tasks = () => {
                     <div className="dropdown-section-title">Tasks</div>
 
                     <motion.button
-                      className="dots-option header tasks"
+                      className="dots-option header tasks disabled"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
                     >
-                      <DownloadTasks className="dots-option-icon header" /> Download tasks
+                      <DownloadTasks className="dots-option-icon header disabled" /> Download tasks
                     </motion.button>
 
                     <motion.button
-                      className="dots-option header tasks"
+                      className="dots-option header tasks disabled"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
                     >
-                      <ImportTasks className="dots-option-icon header" /> Import tasks
+                      <ImportTasks className="dots-option-icon header disabled" /> Import tasks
                     </motion.button>
 
                     <div className="dropdown-divider"></div>
 
                     <motion.button
-                      className="dots-option header"
+                      className="dots-option header disabled"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
                     >
-                      <Changelog className="dots-option-icon header" /> Changelog
+                      <Changelog className="dots-option-icon header disabled" /> Changelog
                     </motion.button>
 
                     <motion.button
@@ -1382,7 +1382,9 @@ const Tasks = () => {
 
           </motion.div>
         </div>
-        <div className="task-input-container">
+        <motion.div
+          className="task-input-container"
+        >
           <AnimatePresence initial={false}>
             {isInputFocused && (
               <motion.div
@@ -1707,7 +1709,7 @@ const Tasks = () => {
               )}
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
 
         <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>

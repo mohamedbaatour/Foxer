@@ -149,11 +149,20 @@
 
 .dots-option.header {
   /* height: 34px; */
-  font-weight: 550;
+  color:  var(--color-text-primary);
+  font-weight: 500;
   letter-spacing: 0.2px;
   padding: 10px; 
 }
 
+.dots-option.header.disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.dots-option-icon.header.disabled {
+  color: var(--color-text-muted);
+}
 
 
 .dots-option.header.twitter:hover {
@@ -213,22 +222,23 @@
   padding: 11px 12px;
   background: transparent;
   border: none;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
   border-radius: 50px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: color 0.2s;
   font-family: "Switzer", sans-serif;
   position: relative;
   isolation: isolate;
 }
 
 .theme-option:hover {
-  background: var(--color-border);
+  color: var(--color-text-primary);
 }
 
 .theme-selection-bg {
+
   position: absolute;
   inset: 0;
   /* border: 1px solid var(--color-border-3); */
@@ -246,10 +256,15 @@
   z-index: 2;
 }
 
+.theme-option-content.selected {
+  color: var(--color-text-primary);
+}
+
+
 .theme-option-icon {
   width: 16px;
   height: 16px;
-  color: var(--color-text-primary);
+  /* color: var(--color-text-primary); */
 }
 
 .task-add-input {

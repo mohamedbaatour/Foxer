@@ -19,7 +19,7 @@
 
 .privacy-policy-defending-container {
     position: fixed;
-    right: 180px;
+    right: 90px;
 
 }
 
@@ -50,16 +50,16 @@
     background-color: var(--color-surface-2);
 }
 
-@media (max-width: 1600px) {
+@media (max-width: 1540px) {
     .privacy-policy-defending-container {
-        right: 120px;
+            right: 50px;
     }
     
 }
 
 @media (max-width: 1450px) {
     .privacy-policy-defending-container {
-        right: 40px;
+        right: 10px;
     }
     
 }
@@ -115,10 +115,6 @@
     color: var(--color-text-muted);
 }
 
-.privacy-policy-logo {
-    width: 32px;
-    height: 32px;
-}
 
 @media (max-width: 1350px) {
     .privacy-policy-defending-container {

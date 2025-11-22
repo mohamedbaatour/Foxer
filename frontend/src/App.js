@@ -21,7 +21,7 @@ function App() {
             <Route path="/" element={<Tasks />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           </Routes>
-          <p className="version">V2.0</p>
+          <p className="version">V2.0 beta</p>
         </div>
       </Router>
     </ThemeProvider>
