@@ -10,6 +10,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
+import { useHotkeys } from "react-hotkeys-hook";
 
 
 import { ReactComponent as Sun } from "../icons/sun.svg";
@@ -543,36 +544,21 @@ const Tasks = () => {
     localStorage.setItem("completedTasks", JSON.stringify(completedTasks));
   }, [completedTasks]);
 
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if (event.key === "a" || event.key === "A") {
-        setTimeout(() => {
-          inputRef.current.focus();
-        }, 0);
-      }
-    };
+  useHotkeys('a', (e) => {
+    e.preventDefault();
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  });
 
-    document.addEventListener("keydown", handleKeyPress);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyPress);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === "Escape" || e.key === "Esc") {
-        if (isInputFocused) {
-          setIsInputFocused(false);
-          inputRef.current?.blur();
-          setTimePickerOpen(false);
-        }
-        window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }));
-      }
-    };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [isInputFocused]);
+  useHotkeys('esc', () => {
+    if (isInputFocused) {
+      setIsInputFocused(false);
+      inputRef.current?.blur();
+      setTimePickerOpen(false);
+    }
+    window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }));
+  }, { enableOnTags: ['INPUT'] }, [isInputFocused]);
 
   const getHour = (d = new Date()) => d.getHours();
 

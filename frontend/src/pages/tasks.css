@@ -171,12 +171,12 @@
   font-weight: 400;
   text-align: left;
   color: var(--color-text-secondary);
-  padding: 8px 8px 8px 0px;
+  padding: 0 0 8px 0px;
   font-family: "Switzer", sans-serif;
 }
 
 .dropdown-section-title.theme {
-  padding: 0px 0px 4px 0px;
+  padding: 0px 0px 8px 0px;
 }
 
 .dropdown-divider {
@@ -190,7 +190,7 @@
   display: flex;
   flex-direction: row;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   background: var(--color-surface-3);
 
   border-radius: 20px;
