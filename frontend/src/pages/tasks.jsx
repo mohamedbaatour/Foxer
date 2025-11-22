@@ -12,6 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "../contexts/ThemeContext";
 
 import _ from 'lodash';
 
@@ -1107,7 +1108,7 @@ const Tasks = () => {
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const headerMenuRef = useRef(null);
 
-  const [selectedTheme, setSelectedTheme] = useState("system"); // UI only, not functional
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     if (!headerMenuOpen) return;
@@ -1192,7 +1193,7 @@ const Tasks = () => {
               className="title-container"
             >
               {getIcon()}
-              <p className="title">{getGreeting()}, User</p>
+              <p className="title">{getGreeting()}, Foxer</p>
             </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -1254,9 +1255,9 @@ const Tasks = () => {
                         role="menuitem"
                         variants={menuItem}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedTheme("system")}
+                        onClick={() => setTheme("system")}
                       >
-                        {selectedTheme === "system" && (
+                        {theme === "system" && (
                           <motion.div
                             className="theme-selection-bg"
                             layoutId="theme-selection"
@@ -1273,9 +1274,9 @@ const Tasks = () => {
                         role="menuitem"
                         variants={menuItem}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedTheme("dark")}
+                        onClick={() => setTheme("dark")}
                       >
-                        {selectedTheme === "dark" && (
+                        {theme === "dark" && (
                           <motion.div
                             className="theme-selection-bg"
                             layoutId="theme-selection"
@@ -1292,9 +1293,9 @@ const Tasks = () => {
                         role="menuitem"
                         variants={menuItem}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedTheme("light")}
+                        onClick={() => setTheme("light")}
                       >
-                        {selectedTheme === "light" && (
+                        {theme === "light" && (
                           <motion.div
                             className="theme-selection-bg"
                             layoutId="theme-selection"
@@ -1363,11 +1364,12 @@ const Tasks = () => {
                     </motion.button>
 
                     <motion.button
-                      className="dots-option header"
+                      className="dots-option header twitter"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
+                      onClick={() => window.open('https://x.com/FoxerHQ', '_blank')}
                     >
                       <Twitter className="dots-option-icon header twitter" /> Follow us on X
                     </motion.button>
@@ -1484,7 +1486,7 @@ const Tasks = () => {
                       initial={{ opacity: 0, x: 8, scale: 0.96 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: 8, scale: 0.96 }}
-                      transition={{ duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+                      transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Clock className="chip-ico clock-ico" />
                     </motion.div>
@@ -1583,7 +1585,7 @@ const Tasks = () => {
                       initial={{ opacity: 0, x: 8, scale: 0.96 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: 8, scale: 0.96 }}
-                      transition={{ delay: 0.1, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+                      transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Calendar className="chip-ico calendar-ico" />
                     </motion.div>

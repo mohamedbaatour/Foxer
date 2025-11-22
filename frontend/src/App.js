@@ -10,17 +10,20 @@ import {
 } from "react-router-dom";
 import PrivacyPolicy from './pages/privacy-policy';
 import Tasks from './pages/tasks';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<Tasks />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<Tasks />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          </Routes>
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 

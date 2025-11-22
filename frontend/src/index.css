@@ -30,8 +30,9 @@
   --mood-top: var(--mood-top-default);
 }
 
+/* System theme: follows OS preference */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --color-bg: #f9f9f9;
     --color-surface: #ffffff;
     --color-surface-2: #f2f2f2;
@@ -59,6 +60,64 @@
     --mood-top-default: #ffffff;
     --mood-top: var(--mood-top-default);
   }
+}
+
+/* Explicit dark theme */
+[data-theme="dark"] {
+  --color-bg: #0f0b0a;
+  --color-surface: #171717;
+  --color-surface-2: #212121;
+  --color-surface-3: #303030;
+  --color-border: #363636;
+  --color-border-2: #3d3d3d;
+  --color-border-3: #4a4a4b;
+  --color-text-primary: #f9f9f9;
+  --color-text-secondary: #acacac;
+  --color-text-muted: #7c7c7c;
+
+  --color-accent: #2fc3a1;
+  --color-accent-hover: #20b08f;
+  --color-error: #da625c;
+  --color-warning: #ceb25f;
+  --color-success: #3ac66a;
+
+  --mood-yellow: rgba(200, 180, 60, 0.03);
+  --mood-red: rgba(215, 90, 80, 0.03);
+  --mood-green: rgba(60, 200, 120, 0.03);
+
+  --bg-grad: #0d0d0d;
+  --bg-radial-top: rgba(255, 200, 150, 0.02);
+  --mood-top-default: #1b120c;
+  --mood-top: var(--mood-top-default);
+}
+
+/* Explicit light theme */
+[data-theme="light"] {
+  --color-bg: #f9f9f9;
+  --color-surface: #ffffff;
+  --color-surface-2: #f2f2f2;
+  --color-surface-3: #ededed;
+  --color-border: #e5e5e5;
+  --color-border-2: #dadada;
+
+  --color-text-primary: #202020;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #7a7a7a;
+
+  --color-accent: #10a37f;
+  --color-accent-hover: #0e8e72;
+  --color-error: #b32626;
+  --color-warning: #ad771e;
+  --color-success: #059669;
+
+  --mood-yellow: rgba(255, 255, 0, 0.05);
+  --mood-red: rgba(255, 0, 0, 0.05);
+  --mood-green: rgba(0, 200, 100, 0.06);
+
+  --bg-grad: #fff;
+  --bg-radial-top: rgba(0, 0, 0, 0.03);
+  --mood-top-default: #ffffff;
+  --mood-top: var(--mood-top-default);
 }
 
 /* Modern custom scrollbar (WebKit browsers) */

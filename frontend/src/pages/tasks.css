@@ -5,7 +5,7 @@
   justify-content: center;
   width: 100%;
 
-  margin-top: 64px;
+  margin-top: 56px;
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -52,15 +52,21 @@
   display: inline-block;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --title-gradient: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
-  }
+:root {
+  --title-gradient: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
 }
+
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme]) {
     --title-gradient: linear-gradient(180deg, #1b1b1b 55%, #999999 100%);
   }
+}
+
+[data-theme="dark"] {
+  --title-gradient: linear-gradient(180deg, #f9f9f9 55%, #a3a3a3 100%);
+}
+[data-theme="light"] {
+  --title-gradient: linear-gradient(180deg, #1b1b1b 55%, #999999 100%);
 }
 
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
@@ -145,6 +151,15 @@
   height: 34px;
   font-weight: 550;
   letter-spacing: 0.2px;
+}
+
+
+
+.dots-option.header.twitter:hover {
+
+    background-color: #1d9cf021;
+
+
 }
 
 .dots-option-icon.header {
@@ -261,7 +276,7 @@
   overflow-y: hidden;
   resize: none;
   white-space: pre-wrap;
-  transition: background-color 0.3s ease-in-out, padding-right 0.2s ease,
+  transition: padding-right 0.2s ease,
     padding-left 0.26s cubic-bezier(0.25, 0.8, 0.3, 1);
 }
 
