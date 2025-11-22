@@ -10,16 +10,12 @@
   --color-text-secondary: #acacac;
   --color-text-muted: #7c7c7c;
 
-  /* Accent (refined teal-mint) */
   --color-accent: #2fc3a1;
   --color-accent-hover: #20b08f;
 
-  /* Status Colors (softened for a premium feel) */
-  --color-error: #da625c; /* warmer + clearer */
-  --color-warning: #ceb25f; /* richer gold */
-  --color-success: #3ac66a; /* fresher green */
-
-  /* Mood Layers (extremely subtle) */
+  --color-error: #da625c;
+  --color-warning: #ceb25f;
+  --color-success: #3ac66a;
   --mood-yellow: rgba(200, 180, 60, 0.03);
   --mood-red: rgba(215, 90, 80, 0.03);
   --mood-green: rgba(60, 200, 120, 0.03);
@@ -30,7 +26,6 @@
   --mood-top: var(--mood-top-default);
 }
 
-/* System theme: follows OS preference */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     --color-bg: #f9f9f9;
@@ -54,7 +49,6 @@
     --mood-red: rgba(255, 0, 0, 0.05);
     --mood-green: rgba(0, 200, 100, 0.06);
 
-    /* Light theme paints */
     --bg-grad: #fff;
     --bg-radial-top: rgba(0, 0, 0, 0.03);
     --mood-top-default: #ffffff;
@@ -62,7 +56,6 @@
   }
 }
 
-/* Explicit dark theme */
 [data-theme="dark"] {
   --color-bg: #0f0b0a;
   --color-surface: #171717;
@@ -91,7 +84,6 @@
   --mood-top: var(--mood-top-default);
 }
 
-/* Explicit light theme */
 [data-theme="light"] {
   --color-bg: #f9f9f9;
   --color-surface: #ffffff;
@@ -120,7 +112,6 @@
   --mood-top: var(--mood-top-default);
 }
 
-/* Modern custom scrollbar (WebKit browsers) */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -146,7 +137,6 @@
   background: var(--color-surface);
 }
 
-/* Firefox scrollbar styling */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-2) var(--color-surface);

@@ -5,3 +5,11 @@
   justify-content: center;
   text-align: center;
 } */
+ .version {
+  position: fixed;
+  right: 32px;
+  bottom: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}

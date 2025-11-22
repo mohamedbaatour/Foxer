@@ -3,7 +3,7 @@ import "./privacy-policy.css";
 import { usePageTitle } from "../hooks/usePageTitle";
 import { delay, motion, scale } from "framer-motion";
 import AnimatedText from "../components/AnimatedText";
-
+import { ReactComponent as ArrowLeft } from "../icons/arrow-left.svg";
 import { ReactComponent as Defending } from "../icons/defending.svg";
 
 const containerVariants = {
@@ -58,9 +58,14 @@ export default function PrivacyPolicy() {
             initial="hidden"
             animate="visible"
         >
+
             <div className="privacy-policy-content">
+                <button onClick={() => window.history.back()} className="privacy-policy-back-button">
+                    <ArrowLeft />
+                    Go back
+                </button>
                 <AnimatedText text="Privacy Policy" className="privacy-policy-title" tag="p" />
-                <AnimatedText text="Version 2.0 - 22/11/2025" className="privacy-policy-subtitle" tag="p" />
+                <AnimatedText text="Version 2.0 - 22 Nov 2025" className="privacy-policy-subtitle" tag="p" />
 
                 <div className="privacy-policy-text">
                     <AnimatedText text="1. Data We Collect" className="privacy-policy-text-header" tag="p" />
