@@ -12,6 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
 import { useHotkeys } from "react-hotkeys-hook";
 
+import _ from 'lodash';
 
 import { ReactComponent as Sun } from "../icons/sun.svg";
 import { ReactComponent as Moon } from "../icons/moon.svg";
@@ -551,14 +552,23 @@ const Tasks = () => {
     }, 0);
   });
 
-  useHotkeys('esc', () => {
-    if (isInputFocused) {
-      setIsInputFocused(false);
-      inputRef.current?.blur();
-      setTimePickerOpen(false);
-    }
-    window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }));
-  }, { enableOnTags: ['INPUT'] }, [isInputFocused]);
+  useHotkeys(
+    'esc',
+    () => {
+      const noPopups = !calendarOpen && !timePickerOpen && !headerMenuOpen
+      if (timePickerOpen) setTimePickerOpen(false)
+      if (calendarOpen) setCalendarOpen(false)
+      if (headerMenuOpen) setHeaderMenuOpen(false)
+      if (noPopups) {
+        setIsInputFocused(false)
+        inputRef.current?.blur()
+      }
+      window.dispatchEvent(new CustomEvent(CLOSE_ALL_EVENT, { detail: null }))
+    },
+    { enableOnTags: ['*'], keydown: true }
+  )
+
+
 
   const getHour = (d = new Date()) => d.getHours();
 
@@ -1377,30 +1387,40 @@ const Tasks = () => {
             onBlur={() => setIsInputFocused(false)}
             animate={isInputFocused ? 'focused' : 'idle'}
             transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
-
             onChange={(e) => {
               const v = e.target.value;
-
-              // reset manual overrides when field is cleared
-              if (v.trim() === "") {
+              if (!v.trim()) {
                 setManualTimeSet(false);
                 setManualDateSet(false);
               }
-
               liveParseNatural(v);
             }}
-
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const val = inputRef.current?.value?.trim();
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                const val = _.trim(inputRef.current?.value)
                 if (val) {
-                  addTask(val);
-                  setIsInputFocused(false);
-                  inputRef.current?.blur();
-                  setTimePickerOpen(false);
+                  addTask(val)
+                  setIsInputFocused(false)
+                  inputRef.current?.blur()
+                  setTimePickerOpen(false)
+                  setCalendarOpen(false)
                 }
               }
+
+              if (e.key === 'Escape') {
+                // only blur if no popup is open
+                const noPopups = !calendarOpen && !timePickerOpen
+                if (noPopups) {
+                  inputRef.current?.blur()
+                  setIsInputFocused(false)
+                }
+
+                // always close open popups
+                if (timePickerOpen) setTimePickerOpen(false)
+                if (calendarOpen) setCalendarOpen(false)
+              }
             }}
+
           />
 
 
@@ -1431,10 +1451,12 @@ const Tasks = () => {
                     transition={{ type: "spring", stiffness: 520, damping: 36, mass: 0.7 }}
                     ref={timePickerAnchorRef}
                     onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTimePickerOpen((s) => !s);
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (calendarOpen) setCalendarOpen(false)
+                      setTimePickerOpen(s => !s)
                     }}
+
                     role="button"
                     aria-haspopup="dialog"
                     aria-expanded={timePickerOpen}
@@ -1444,7 +1466,7 @@ const Tasks = () => {
                       initial={{ opacity: 0, x: 8, scale: 0.96 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: 8, scale: 0.96 }}
-                      transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+                      transition={{ duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Clock className="chip-ico clock-ico" />
                     </motion.div>
@@ -1456,7 +1478,7 @@ const Tasks = () => {
                           initial={{ opacity: 0, y: 6, scale: 0.92 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -6, scale: 0.92 }}
-                          transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
+                          transition={{ delay: 0.1, duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
                         >
                           {selectedTime.format("h:mm A")}
                         </motion.span>
@@ -1472,7 +1494,7 @@ const Tasks = () => {
                           initial={{ opacity: 0, y: 8, scale: 0.96 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 8, scale: 0.96, }}
-                          transition={{ duration: 0.3, ease: [0.25, 0.8, 0.3, 1] }}
+                          transition={{ delay: 0.1, duration: 0.3, ease: [0.25, 0.8, 0.3, 1] }}
                           style={{
                             position: "absolute",
                             top: timePickerAnchorRef.current?.offsetTop + 42 || 0,
@@ -1528,11 +1550,12 @@ const Tasks = () => {
                     animate={{ opacity: 1, y: 0, x: 0 }}
                     exit={{ opacity: 0, y: -6, x: 4, }}
                     transition={{ type: 'spring', stiffness: 520, damping: 36, mass: 0.7 }}
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation()
+                      if (timePickerOpen) setTimePickerOpen(false)
                       setCalendarOpen(s => !s)
-
                     }}
+
                     ref={calendarAnchorRef}
                     onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
                     role="button"
@@ -1542,7 +1565,7 @@ const Tasks = () => {
                       initial={{ opacity: 0, x: 8, scale: 0.96 }}
                       animate={{ opacity: 1, x: 0, scale: 1 }}
                       exit={{ opacity: 0, x: 8, scale: 0.96 }}
-                      transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+                      transition={{ delay: 0.1, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Calendar className="chip-ico calendar-ico" />
                     </motion.div>
