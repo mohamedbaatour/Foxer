@@ -1,8 +1,8 @@
 :root {
   --color-bg: #0f0b0a;
-  --color-surface: #161618;
-  --color-surface-2: #1f1f22;
-  --color-surface-3: #28282b;
+  --color-surface: #171717;
+  --color-surface-2: #212121;
+  --color-surface-3: #303030;
   --color-border: #2f2f31;
   --color-border-2: #3a3a3c;
 
@@ -10,17 +10,21 @@
   --color-text-secondary: #a1a1aa;
   --color-text-muted: #71717a;
 
-  --color-accent: #31caa4;
-  --color-accent-hover: #00b88c;
-  --color-error: #d65751;
-  --color-warning: #dab751;
-  --color-success: #22c55e;
+  /* Accent (refined teal-mint) */
+  --color-accent: #2fc3a1;
+  --color-accent-hover: #20b08f;
 
-  --mood-yellow: rgba(145, 255, 0, 0.012);
-  --mood-red: rgba(247, 74, 65, 0.012);
-  --mood-green: rgba(0, 255, 0, 1);
+  /* Status Colors (softened for a premium feel) */
+  --color-error: #da625c; /* warmer + clearer */
+  --color-warning: #ceb25f; /* richer gold */
+  --color-success: #3ac66a; /* fresher green */
 
-  --bg-grad: linear-gradient(to bottom, #1b120c 0%, #121212 35%, #121212 100%);
+  /* Mood Layers (extremely subtle) */
+  --mood-yellow: rgba(200, 180, 60, 0.03);
+  --mood-red: rgba(215, 90, 80, 0.03);
+  --mood-green: rgba(60, 200, 120, 0.03);
+
+  --bg-grad: #0d0d0d;
   --bg-radial-top: rgba(255, 200, 150, 0.02);
   --mood-top-default: #1b120c;
   --mood-top: var(--mood-top-default);
@@ -35,7 +39,7 @@
     --color-border: #e5e5e5;
     --color-border-2: #dadada;
 
-    --color-text-primary: #181818;
+    --color-text-primary: #202020;
     --color-text-secondary: #4a4a4a;
     --color-text-muted: #7a7a7a;
 
@@ -50,12 +54,7 @@
     --mood-green: rgba(0, 200, 100, 0.06);
 
     /* Light theme paints */
-    --bg-grad: linear-gradient(
-      to bottom,
-      #ffffff 0%,
-      #f7f7f8 35%,
-      #f7f7f8 100%
-    );
+    --bg-grad: #fff;
     --bg-radial-top: rgba(0, 0, 0, 0.03);
     --mood-top-default: #ffffff;
     --mood-top: var(--mood-top-default);
@@ -124,7 +123,7 @@ body {
   font-family: "Switzer", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background 0.6s ease;
+  /* transition: background 0.6s ease; */
   min-height: 100vh;
   position: relative;
 }
