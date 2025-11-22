@@ -11,6 +11,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useNavigate } from "react-router-dom";
 
 import _ from 'lodash';
 
@@ -36,10 +37,13 @@ import { ReactComponent as SystemTheme } from "../icons/system-theme.svg";
 import { ReactComponent as ImportTasks } from "../icons/import-tasks.svg";
 import { ReactComponent as DownloadTasks } from "../icons/download-tasks.svg";
 import { ReactComponent as About } from "../icons/about.svg";
-import { ReactComponent as TermsOfUse } from "../icons/terms-of-use.svg";
+import { ReactComponent as PrivacyPolicy } from "../icons/terms-of-use.svg";
 import { ReactComponent as Twitter } from "../icons/twitter.svg";
+import { ReactComponent as Changelog } from "../icons/changelog.svg";
 
 import * as chrono from "chrono-node";
+
+import { usePageTitle } from "../hooks/usePageTitle";
 
 import confetti from "canvas-confetti";
 
@@ -334,7 +338,11 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 });
 
 
+
+
 const Tasks = () => {
+  usePageTitle("Foxer - Tasks");
+  const nav = useNavigate();
 
 
 
@@ -1330,7 +1338,18 @@ const Tasks = () => {
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
                     >
-                      <TermsOfUse className="dots-option-icon header" /> Terms of use
+                      <Changelog className="dots-option-icon header" /> Changelog
+                    </motion.button>
+
+                    <motion.button
+                      className="dots-option header"
+                      role="menuitem"
+                      variants={menuItem}
+                      whileHover={{ x: 1.5, scale: 1.004 }}
+                      whileTap={{ scale: 0.992 }}
+                      onClick={() => nav("/privacy-policy")}
+                    >
+                      <PrivacyPolicy className="dots-option-icon header" /> Privacy policy
                     </motion.button>
 
                     <motion.button
@@ -1420,7 +1439,6 @@ const Tasks = () => {
                 if (calendarOpen) setCalendarOpen(false)
               }
             }}
-
           />
 
 

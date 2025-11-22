@@ -3,12 +3,12 @@
   --color-surface: #171717;
   --color-surface-2: #212121;
   --color-surface-3: #303030;
-  --color-border: #2f2f31;
-  --color-border-2: #3a3a3c;
-  --color-border-3: #4b4b4e;
-  --color-text-primary: #edf2f8;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
+  --color-border: #363636;
+  --color-border-2: #3d3d3d;
+  --color-border-3: #4a4a4b;
+  --color-text-primary: #f9f9f9;
+  --color-text-secondary: #acacac;
+  --color-text-muted: #7c7c7c;
 
   /* Accent (refined teal-mint) */
   --color-accent: #2fc3a1;
@@ -124,7 +124,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* transition: background 0.6s ease; */
-  min-height: 100vh;
+  /* min-height: 100vh; */
   position: relative;
 }
 
