@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./tasks.css";
 import { AnimatePresence, LayoutGroup, MotionConfig, delay, motion } from "framer-motion";
-import { DndContext, useDroppable, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import { DndContext, useDroppable, DragOverlay, pointerWithin, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
@@ -383,6 +383,14 @@ const Tasks = () => {
 
     document.addEventListener("pointerdown", onDocPointerDown);
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
+  }, [isInputFocused]);
+
+  // Close pickers when input loses focus
+  useEffect(() => {
+    if (!isInputFocused) {
+      setTimePickerOpen(false);
+      setCalendarOpen(false);
+    }
   }, [isInputFocused]);
 
   const [timePickerOpen, setTimePickerOpen] = useState(false);
@@ -1197,7 +1205,13 @@ const Tasks = () => {
     return () => ro.disconnect();
   }, [isInputFocused, selectedTime, selectedDate, timePickerOpen, calendarOpen]);
 
-
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // prevents accidental triggers
+      },
+    }),
+  );
 
 
   return (
@@ -1481,11 +1495,13 @@ const Tasks = () => {
               e.preventDefault();
               isInteractingWithControls.current = true;
             }}
-            onTouchStart={() => {
-              // Mark interaction for touch devices
+            onTouchStart={(e) => {
+              // Prevent focus loss on mobile
+              e.preventDefault();
               isInteractingWithControls.current = true;
             }}
-            onPointerDown={() => {
+            onPointerDown={(e) => {
+              e.preventDefault();
               isInteractingWithControls.current = true;
               // Reset flag after a delay to allow click to process
               setTimeout(() => { isInteractingWithControls.current = false; }, 500);
@@ -1516,7 +1532,7 @@ const Tasks = () => {
                     exit={{ opacity: 0, y: -6, x: 4 }}
                     transition={{ type: "spring", stiffness: 520, damping: 36, mass: 0.7 }}
                     ref={timePickerAnchorRef}
-                    onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onPointerDownCapture={(e) => { e.stopPropagation(); }}
                     onClick={e => {
                       e.stopPropagation()
                       if (calendarOpen) setCalendarOpen(false)
@@ -1623,7 +1639,7 @@ const Tasks = () => {
                     }}
 
                     ref={calendarAnchorRef}
-                    onPointerDownCapture={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onPointerDownCapture={(e) => { e.stopPropagation(); }}
                     role="button"
                     aria-haspopup="dialog"
                   >
@@ -1671,9 +1687,6 @@ const Tasks = () => {
                           willChange: "transform, opacity"
                         }}
                         onClick={e => e.stopPropagation()}
-                        onMouseDown={e => e.preventDefault()}
-                        onPointerDown={e => e.preventDefault()}
-                        onTouchStart={e => e.preventDefault()}
                         layout
                       >
                         {(() => {
@@ -1762,6 +1775,7 @@ const Tasks = () => {
               collisionDetection={pointerWithin}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
+              sensors={sensors}
             >
 
               <DroppableContainer id="tasks">
@@ -1939,8 +1953,7 @@ const Tasks = () => {
             </DndContext>
           </LayoutGroup>
         </MotionConfig>
-
-      </div>
+      </div >
       {!isDragging && (
         <Selecto
           key="selecto"
@@ -1982,7 +1995,7 @@ const Tasks = () => {
       </AnimatePresence>
 
 
-    </div>
+    </div >
   );
 };
 

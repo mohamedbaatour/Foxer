@@ -112,6 +112,11 @@
   --mood-top: var(--mood-top-default);
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

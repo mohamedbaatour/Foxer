@@ -46,9 +46,9 @@ function PrivacyPolicy() {
     useEffect(() => {
         const handler = e => {
             const { innerWidth, innerHeight } = window;
-            const nx = (e.clientX / innerWidth) * 2 - 1;   // -1 → 1
+            const nx = (e.clientX / innerWidth) * 2 - 1;
             const ny = (e.clientY / innerHeight) * 2 - 1;
-            x.set(nx * 20);  // 40px “wiggle”
+            x.set(nx * 20);
             y.set(ny * 20);
         };
         window.addEventListener("mousemove", handler);

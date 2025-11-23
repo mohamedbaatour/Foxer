@@ -5,6 +5,11 @@
   justify-content: center;
   text-align: center;
 } */
+
+.App {
+  padding: 0 16px;
+}
+
  .version {
   position: fixed;
   right: 32px;
@@ -13,6 +18,12 @@
   font-weight: 500;
   color: var(--color-text-secondary);
   z-index: 9999999;
+}
+
+@media (max-width: 768px) {
+  .version {
+    display: none;
+  }
 }
 
 #wip-tooltip {
