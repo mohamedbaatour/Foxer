@@ -1183,7 +1183,7 @@ const Tasks = () => {
 
   return (
     <div className="tasks-container">
-      <div style={{ width: "620px" }} className="tasks-subcontainer">
+      <div className="tasks-subcontainer">
         <div className="tasks-header">
           <div className="tasks-header-text">
             <motion.div
