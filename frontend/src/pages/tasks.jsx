@@ -365,6 +365,25 @@ const Tasks = () => {
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
+  const containerRef = useRef(null);
+  const isInteractingWithControls = useRef(false);
+
+  useEffect(() => {
+    if (!isInputFocused) return;
+
+    const onDocPointerDown = (e) => {
+      if (inputRef.current && inputRef.current.contains(e.target)) return;
+      if (containerRef.current && containerRef.current.contains(e.target)) return;
+
+      // Check if click is in a portal (like time picker dropdown if it was a portal, but here it's inline)
+      // Just in case, we can check if the target is within the containerRef which wraps everything
+
+      setIsInputFocused(false);
+    };
+
+    document.addEventListener("pointerdown", onDocPointerDown);
+    return () => document.removeEventListener("pointerdown", onDocPointerDown);
+  }, [isInputFocused]);
 
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const timePickerAnchorRef = useRef(null);
@@ -1386,6 +1405,7 @@ const Tasks = () => {
         </div>
         <motion.div
           className="task-input-container"
+          ref={containerRef}
         >
           <AnimatePresence initial={false}>
             {isInputFocused && (
@@ -1409,7 +1429,10 @@ const Tasks = () => {
             placeholder="Create a new task..."
             className="task-add-input"
             onFocus={() => setIsInputFocused(true)}
-            onBlur={() => setIsInputFocused(false)}
+            onBlur={() => {
+              if (isInteractingWithControls.current) return;
+              setIsInputFocused(false);
+            }}
             animate={isInputFocused ? 'focused' : 'idle'}
             transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
             onChange={(e) => {
@@ -1448,7 +1471,13 @@ const Tasks = () => {
           />
 
 
-          <div className="task-input-right">
+          <div
+            className="task-input-right"
+            onPointerDown={() => {
+              isInteractingWithControls.current = true;
+              setTimeout(() => { isInteractingWithControls.current = false; }, 500);
+            }}
+          >
 
             <AnimatePresence initial={false} mode="wait">
               {!isInputFocused ? (
