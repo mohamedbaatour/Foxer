@@ -1187,9 +1187,9 @@ const Tasks = () => {
         <div className="tasks-header">
           <div className="tasks-header-text">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 20, filter: "blur(6px)" }}
               transition={{ duration: 0.4, delay: 0.3 }}
               className="title-container"
             >
@@ -1197,9 +1197,9 @@ const Tasks = () => {
               <p className="title">{getGreeting()}</p>
             </motion.div>
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 10, filter: "blur(6px)" }}
               transition={{ duration: 0.4, delay: 0.7 }}
               className="information"
             >
@@ -1213,9 +1213,9 @@ const Tasks = () => {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 10, filter: "blur(6px)" }}
             transition={{ duration: 0.4, delay: 1.0 }}
             className="header-dots-container"
             ref={headerMenuRef}
