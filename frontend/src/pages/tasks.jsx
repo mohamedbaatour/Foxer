@@ -1522,7 +1522,7 @@ const Tasks = () => {
                           style={{
                             position: "absolute",
                             top: timePickerAnchorRef.current?.offsetTop + 42 || 0,
-                            right: 0,
+                            right: -1.5,
                             zIndex: 3100,
                           }}
                           onPointerDown={(e) => e.stopPropagation()}
@@ -1623,7 +1623,7 @@ const Tasks = () => {
                         style={{
                           position: "absolute",
                           top: calendarAnchorRef.current?.offsetTop + 42 || 0,
-                          right: 0,
+                          right: -1.5,
                           zIndex: 3000,
                           transformOrigin: "top right",
                           willChange: "transform, opacity"
