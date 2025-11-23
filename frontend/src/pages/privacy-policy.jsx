@@ -69,7 +69,7 @@ function PrivacyPolicy() {
                     Go back
                 </button>
                 <AnimatedText text="Privacy Policy" className="privacy-policy-title" tag="p" />
-                <AnimatedText text="Version 2.0 - 22 Nov 2025" className="privacy-policy-subtitle" tag="p" />
+                <AnimatedText text="Version 2.0 - 23 Nov 2025" className="privacy-policy-subtitle" tag="p" />
 
                 <div className="privacy-policy-text">
                     <AnimatedText text="1. Data We Collect" className="privacy-policy-text-header" tag="p" />

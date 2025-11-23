@@ -32,7 +32,6 @@ const itemVariants = {
 };
 
 export default function AnimatedText({ text, className, tag = "p" }) {
-    // Split text into characters
     const characters = text.split("");
     const Tag = motion[tag];
 

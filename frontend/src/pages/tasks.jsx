@@ -287,13 +287,13 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
               >
                 <motion.div variants={itemsWrap} initial="closed" animate="open" exit="closed">
                   <motion.button
-                    className="dots-option"
+                    className="dots-option disabled"
                     role="menuitem"
                     variants={menuItem}
                     whileHover={{ x: 1.5, scale: 1.004 }}
                     whileTap={{ scale: 0.992 }}
                   >
-                    <Edit className="dots-option-icon" /> Edit
+                    <Edit className="dots-option-icon disabled" /> Edit
                   </motion.button>
 
                   <motion.button
@@ -342,22 +342,24 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
 
 
-
-function DroppableContainer({ id, children }) {
-  const { setNodeRef } = useDroppable({
-    id,
-  });
-
-  return (
-    <div ref={setNodeRef} style={{ minHeight: 50, width: "100%" }}>
-      {children}
-    </div>
-  );
-}
-
 const Tasks = () => {
   usePageTitle("Foxer - Tasks");
   const nav = useNavigate();
+
+
+
+
+  function DroppableContainer({ id, children }) {
+    const { setNodeRef } = useDroppable({
+      id,
+    });
+
+    return (
+      <div ref={setNodeRef} style={{ minHeight: 50, width: "100%" }}>
+        {children}
+      </div>
+    );
+  }
 
 
 
@@ -1214,7 +1216,7 @@ const Tasks = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.4, delay: 0.5 }}
+            transition={{ duration: 0.4, delay: 1.0 }}
             className="header-dots-container"
             ref={headerMenuRef}
             onPointerDownCapture={(e) => { e.stopPropagation(); }}
@@ -1358,6 +1360,7 @@ const Tasks = () => {
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
+                      onClick={() => nav("/about")}
                     >
                       <About className="dots-option-icon header" /> About
                     </motion.button>
@@ -1726,15 +1729,12 @@ const Tasks = () => {
                 >
                   <div className="tasks-list-container">
                     {tasks.length === 0 ? (
-                      <motion.div
+                      <div
                         className="empty-state"
-                        initial={{ opacity: 0, scale: 0.8, y: 20, filter: "blur(4px)" }}
-                        animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-                        transition={{ duration: 0.6, ease: [0.25, 0.8, 0.3, 1] }}
                       >
                         <Logo className="empty-state-logo" />
                         <p className="empty-state-text">No tasks remaining!</p>
-                      </motion.div>
+                      </div>
                     ) : (
                       <AnimatePresence initial={false}>
                         {tasks.map((task) => {

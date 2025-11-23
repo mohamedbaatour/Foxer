@@ -466,6 +466,10 @@
   color: var(--color-text-secondary);
 }
 
+.calendar-day.disabled:hover {
+  cursor: not-allowed;
+}
+
 .calendar-day.disabled {
   color: var(--color-surface-3);
   pointer-events: none;
@@ -825,11 +829,21 @@ margin-top: 0.5px;
   letter-spacing: 0.1px;
 }
 
+.dots-option.disabled {
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
 
 .dots-option-icon {
   width: 18px;
   height: 18px;
   color: var(--color-text-primary);
+}
+
+.dots-option.disabled .dots-option-icon {
+  color: var(--color-text-muted);
 }
 
 .dots-option + .dots-option {
@@ -983,7 +997,7 @@ margin-top: 0.5px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 0;
+  padding: 48px 0;
   gap: 16px;
   opacity: 0.8;
 }
