@@ -732,10 +732,11 @@ margin-top: 0.5px;
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(6px);
-  background: var(--color-surface-2);
+  /* background: var(--color-surface-2); */
+  backdrop-filter: blur(8px);
   color: var(--color-text-primary);
   border: 0.5px solid var(--color-border);
-  padding: 6px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
@@ -745,7 +746,6 @@ margin-top: 0.5px;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
   z-index: 10;
-  box-shadow: #0000006b 0px 0px 20px 0px;
 }
 
 .task-date-popup.late {
