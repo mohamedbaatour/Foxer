@@ -41,6 +41,7 @@ import { ReactComponent as About } from "../icons/about.svg";
 import { ReactComponent as PrivacyPolicy } from "../icons/terms-of-use.svg";
 import { ReactComponent as Twitter } from "../icons/twitter.svg";
 import { ReactComponent as Changelog } from "../icons/changelog.svg";
+import { ReactComponent as Logo } from "../icons/logo.svg";
 
 import * as chrono from "chrono-node";
 
@@ -341,24 +342,22 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
 
 
+
+function DroppableContainer({ id, children }) {
+  const { setNodeRef } = useDroppable({
+    id,
+  });
+
+  return (
+    <div ref={setNodeRef} style={{ minHeight: 50, width: "100%" }}>
+      {children}
+    </div>
+  );
+}
+
 const Tasks = () => {
   usePageTitle("Foxer - Tasks");
   const nav = useNavigate();
-
-
-
-
-  function DroppableContainer({ id, children }) {
-    const { setNodeRef } = useDroppable({
-      id,
-    });
-
-    return (
-      <div ref={setNodeRef} style={{ minHeight: 50, width: "100%" }}>
-        {children}
-      </div>
-    );
-  }
 
 
 
@@ -1726,33 +1725,45 @@ const Tasks = () => {
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="tasks-list-container">
-                    <AnimatePresence initial={false}>
-                      {tasks.map((task) => {
-                        const { time, date } = formatTaskDate(task.due.parsedDate);
-                        const dateClass = getTaskDateClass(task);
-                        const timeClass = getTaskTimeClass(task);
-                        const isGroupDragging = isDragging && multiDragging.includes(task.id);
+                    {tasks.length === 0 ? (
+                      <motion.div
+                        className="empty-state"
+                        initial={{ opacity: 0, scale: 0.8, y: 20, filter: "blur(4px)" }}
+                        animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
+                        transition={{ duration: 0.6, ease: [0.25, 0.8, 0.3, 1] }}
+                      >
+                        <Logo className="empty-state-logo" />
+                        <p className="empty-state-text">No tasks remaining!</p>
+                      </motion.div>
+                    ) : (
+                      <AnimatePresence initial={false}>
+                        {tasks.map((task) => {
+                          const { time, date } = formatTaskDate(task.due.parsedDate);
+                          const dateClass = getTaskDateClass(task);
+                          const timeClass = getTaskTimeClass(task);
+                          const isGroupDragging = isDragging && multiDragging.includes(task.id);
 
-                        return (
-                          <SortableTaskItem
-                            key={task.id}
-                            task={task}
-                            time={time}
-                            date={date}
-                            dateClass={dateClass}
-                            timeClass={timeClass}
-                            onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
-                            onMouseLeave={() => setBgMood(null)}
-                            onCheck={() => handleCheck(task, false)}
-                            onDelete={(id) => deleteTaskWithAnimation(id, false)}
-                            onDuplicate={(id) => duplicateTask(id, false)}
-                            isDraggingGlobal={isDragging}
-                            isDeleting={deletingIds.includes(task.id)}
-                            isGroupDragging={isGroupDragging}
-                          />
-                        );
-                      })}
-                    </AnimatePresence>
+                          return (
+                            <SortableTaskItem
+                              key={task.id}
+                              task={task}
+                              time={time}
+                              date={date}
+                              dateClass={dateClass}
+                              timeClass={timeClass}
+                              onMouseEnter={() => !isDragging && setBgMood(moodFromDateClass(dateClass, task))}
+                              onMouseLeave={() => setBgMood(null)}
+                              onCheck={() => handleCheck(task, false)}
+                              onDelete={(id) => deleteTaskWithAnimation(id, false)}
+                              onDuplicate={(id) => duplicateTask(id, false)}
+                              isDraggingGlobal={isDragging}
+                              isDeleting={deletingIds.includes(task.id)}
+                              isGroupDragging={isGroupDragging}
+                            />
+                          );
+                        })}
+                      </AnimatePresence>
+                    )}
 
                   </div>
                 </SortableContext>
