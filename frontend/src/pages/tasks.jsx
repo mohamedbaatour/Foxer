@@ -1430,8 +1430,11 @@ const Tasks = () => {
             className="task-add-input"
             onFocus={() => setIsInputFocused(true)}
             onBlur={() => {
-              if (isInteractingWithControls.current) return;
-              setIsInputFocused(false);
+              // Delay blur to allow interaction flags to be set
+              setTimeout(() => {
+                if (isInteractingWithControls.current) return;
+                setIsInputFocused(false);
+              }, 100);
             }}
             animate={isInputFocused ? 'focused' : 'idle'}
             transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
@@ -1473,8 +1476,18 @@ const Tasks = () => {
 
           <div
             className="task-input-right"
+            onMouseDown={(e) => {
+              // Prevent focus loss on desktop
+              e.preventDefault();
+              isInteractingWithControls.current = true;
+            }}
+            onTouchStart={() => {
+              // Mark interaction for touch devices
+              isInteractingWithControls.current = true;
+            }}
             onPointerDown={() => {
               isInteractingWithControls.current = true;
+              // Reset flag after a delay to allow click to process
               setTimeout(() => { isInteractingWithControls.current = false; }, 500);
             }}
           >

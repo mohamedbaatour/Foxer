@@ -1025,7 +1025,7 @@ margin-top: 0.5px;
 
 @media (max-width: 640px) {
   .tasks-container {
-    /* padding: 0 60px 0 20px; */
+
     margin-top: 32px;
   }
 
@@ -1065,7 +1065,7 @@ margin-top: 0.5px;
 
 @media (max-width: 400px) {
   .tasks-container {
-    /* padding: 0 16px; */
+    /* padding: 0 16px !important; */
   }
 
   .task-title {
