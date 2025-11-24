@@ -925,7 +925,7 @@ const Tasks = () => {
         setTasks(prev => prev.filter(t => t.id !== task.id));
         setCompletedTasks(prev => [{ ...task, completed: true }, ...prev]);
         setIsCompletedTasksOpen(true);
-      }, 360);
+      }, 550);
     } else {
       setTimeout(() => {
         setCompletedTasks(prev => prev.filter(t => t.id !== task.id));

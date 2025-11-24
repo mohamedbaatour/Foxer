@@ -21,9 +21,9 @@ const containerVariants = {
 
 
 const logoVariants = {
-    hidden: { opacity: 0, y: 80, scale: 0.9, filter: "blur(24px)" },
+    hidden: { opacity: 0, scale: 0.9, filter: "blur(24px)" },
     visible: {
-        opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: {
+        opacity: 1, scale: 1, filter: "blur(0px)", transition: {
             type: "spring",
             stiffness: 50,
             damping: 15,
