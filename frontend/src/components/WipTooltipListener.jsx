@@ -13,20 +13,20 @@ const WipTooltipListener = () => {
         const hide = () => {
             active = false;
             tooltip.style.opacity = "0";
-            tooltip.style.transform = "translate(-0%, -0%) scale(0.96)";
+            tooltip.style.transform = "translate(10%, 10%) scale(0.96)";
         };
 
         const show = () => {
             active = true;
             tooltip.style.opacity = "1";
-            tooltip.style.transform = "translate(-20%, -20%) scale(1)";
+            tooltip.style.transform = "translate(-7%, -7%) scale(1)";
         };
 
         const move = (e) => {
             if (!active) return;
 
             const speed = Math.hypot(e.movementX, e.movementY);
-            tooltip.style.opacity = speed < 1 ? "0.65" : "1";
+            // tooltip.style.opacity = speed < 1 ? "0.65" : "1";
 
             tooltip.style.left = `${e.clientX + 14}px`;
             tooltip.style.top = `${e.clientY + 14}px`;
