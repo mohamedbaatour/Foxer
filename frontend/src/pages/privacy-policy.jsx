@@ -69,7 +69,7 @@ function PrivacyPolicy() {
                     Go back
                 </button>
                 <AnimatedText text="Privacy Policy" className="privacy-policy-title" tag="p" />
-                <AnimatedText text="Version 2.0 - 23 Nov 2025" className="privacy-policy-subtitle" tag="p" />
+                <AnimatedText text="Version 2.0 - 24 Nov 2025" className="privacy-policy-subtitle" tag="p" />
 
                 <div className="privacy-policy-text">
                     <AnimatedText text="1. Data We Collect" className="privacy-policy-text-header" tag="p" />
@@ -105,7 +105,7 @@ function PrivacyPolicy() {
                         Foxer does not use user accounts, logins, passwords, syncing, or cloud backups. This means your data stays on your device and cannot be accessed by us or anyone else through Foxer. There is no registration, no sign-in process, and no remote profile associated with your use of the app.
                     </motion.p>
 
-                    <AnimatedText text="4. No Tracking or Analytics" className="privacy-policy-text-header" tag="p" />
+                    <AnimatedText text="4. Limited Analytics" className="privacy-policy-text-header" tag="p" />
                     <motion.p
                         className="privacy-policy-text-item"
                         initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
@@ -113,7 +113,9 @@ function PrivacyPolicy() {
                         viewport={{ once: true, amount: 0.5 }}
                         transition={{ type: "spring", stiffness: 50, damping: 15, delay: 0.2 }}
                     >
-                        Foxer does not use analytics services, advertising trackers, cookies for profiling, or any third-party tracking tools. We do not monitor how you use the app, do not track your behavior, and do not build any usage profile. Your interaction with Foxer is private and remains on your device.
+                        To keep improving Foxer, we use a basic analytics tool that shows us general usage trends-things like how many
+                        people visit and which parts of the site are used the most. It doesn’t look at your tasks, your preferences, or
+                        anything personal. Everything stays anonymous, and nothing is shared or sold.
                     </motion.p>
 
                     <AnimatedText text="5. Offline Usage" className="privacy-policy-text-header" tag="p" />

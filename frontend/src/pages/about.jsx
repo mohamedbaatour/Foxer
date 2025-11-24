@@ -68,7 +68,7 @@ function About() {
                 </button>
 
                 <AnimatedText text="About Foxer" className="about-title" tag="p" />
-                <AnimatedText text="Version 2.0 - 23 Nov 2025" className="about-subtitle" tag="p" />
+                <AnimatedText text="Version 2.0 - 24 Nov 2025" className="about-subtitle" tag="p" />
 
                 <div className="about-text">
 
