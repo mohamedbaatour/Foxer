@@ -135,7 +135,9 @@ function About() {
                         viewport={{ once: true, amount: 0.2 }}
                         transition={{ type: "spring", stiffness: 50, damping: 15, delay: 0.2 }}
                     >
-                        Foxer stores everything locally using your browser’s localStorage. No data leaves your device, nothing is uploaded or tracked, and no analytics run in the background.
+                        Foxer keeps your tasks and preferences on your device using your browser’s localStorage. This information never
+                        leaves your device. We use a small analytics tool only to understand overall traffic, but it never sees your
+                        tasks or any personal details.
                     </motion.p>
 
                     <AnimatedText text="7. Tools Used" className="about-text-header" tag="p" />
