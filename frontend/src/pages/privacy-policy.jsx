@@ -113,9 +113,7 @@ function PrivacyPolicy() {
                         viewport={{ once: true, amount: 0.5 }}
                         transition={{ type: "spring", stiffness: 50, damping: 15, delay: 0.2 }}
                     >
-                        To keep improving Foxer, we use a basic analytics tool that shows us general usage trends-things like how many
-                        people visit and which parts of the site are used the most. It doesn’t look at your tasks, your preferences, or
-                        anything personal. Everything stays anonymous, and nothing is shared or sold.
+                        To keep improving Foxer, we use a basic analytics tool that shows us general usage trends-things like how many people visit and which parts of the site are used the most. It doesn’t look at your tasks, your preferences, or anything personal. Everything stays anonymous, and nothing is shared or sold.
                     </motion.p>
 
                     <AnimatedText text="5. Offline Usage" className="privacy-policy-text-header" tag="p" />
