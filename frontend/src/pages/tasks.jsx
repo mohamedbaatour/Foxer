@@ -132,7 +132,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDuplicate,
   isOverlay = false,
   isDeleting = false,
-  isBaseHidden = false, // 👈 NEW
+  isBaseHidden = false,
+  isDraggingGlobal = false, // 👈 use global dragging flag
   ...props
 }) {
   const {
@@ -151,7 +152,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     },
   });
 
-
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
 
@@ -168,7 +168,12 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     else { isLateForPopup = true; const a = Math.abs(d); daysLeftText = `${a} day${a === 1 ? "" : "s"} late`; }
   }
 
-  const disableLayout = isDragging || isOverlay;
+  // 🔑 Completely turn off layout while:
+  // - this item is the active draggable
+  // - OR it's the overlay
+  // - OR it's globally in a drag
+  // - OR it's one of the hidden base items in a multi-drag
+  const disableLayout = isDragging || isOverlay || isDraggingGlobal || isBaseHidden;
 
   const menuRef = useRef(null);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -191,10 +196,11 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [menuOpen]);
 
-  // dnd transform only for base item, not overlay
-  const dndStyle = !isOverlay && transform
-    ? { transform: CSS.Transform.toString(transform), transition }
-    : {};
+  // dnd transform only for base item, not overlay, not hidden
+  const dndStyle =
+    !isOverlay && !isBaseHidden && transform
+      ? { transform: CSS.Transform.toString(transform), transition }
+      : {};
 
   return (
     <motion.div
@@ -206,33 +212,32 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       }
       layout={!disableLayout}
       layoutId={!disableLayout ? task.id : undefined}
-      transition={!disableLayout
-        ? { type: "spring", stiffness: 700, damping: 50 }
-        : { duration: 0 }
+      transition={
+        !disableLayout
+          ? { type: "spring", stiffness: 700, damping: 50 }
+          : { duration: 0 }
       }
       animate={isDeleting ? { opacity: 0, y: -8, scale: 0.985 } : undefined}
       exit={{ opacity: 0, y: -8, scale: 0.985, transition: { duration: 0.18 } }}
       style={{
         ...dndStyle,
-        opacity: isOverlay ? 1 : (isBaseHidden ? 0 : 1),   // 👈 key line
+        opacity: isOverlay ? 1 : (isBaseHidden ? 0 : 1),
         pointerEvents: isDeleting ? "none" : undefined,
         willChange: !isOverlay && isDragging ? "transform" : "auto",
       }}
       {...props}
     >
       <div className="task-item-left">
-        {/* 👈 no handle in overlay */}
         <span {...listeners} {...attributes} style={{ cursor: "grab" }}>
           <Drag className="drag-handle-icon" />
         </span>
-
 
         <motion.div
           className={`check-square${task.completed || justChecked ? " checked" : ""}`}
           data-id={task.id}
           onClick={() => { if (!task.completed) setJustChecked(true); onCheck?.(); }}
           whileTap={{ scale: 0.92 }}
-          animate={(task.completed) ? { scale: [1, 1.06, 1] } : {}}
+          animate={task.completed ? { scale: [1, 1.06, 1] } : {}}
           transition={{ duration: 3.2 }}
         >
           {(task.completed || justChecked) && <Check className="check-icon" />}
@@ -256,7 +261,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           )}
         </div>
 
-        < div
+        <div
           className="task-dots-container"
           ref={menuRef}
           onPointerDownCapture={(e) => { e.stopPropagation(); }}
@@ -341,11 +346,11 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
             )}
           </AnimatePresence>
         </div>
-
-      </div >
-    </motion.div >
+      </div>
+    </motion.div>
   );
 });
+
 
 
 
@@ -779,9 +784,14 @@ const Tasks = () => {
       };
     });
 
+    // 👇 keep base items hidden while dragging
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setHiddenIds(group);
+
     setMultiDragging(group);
     setMultiOffsets(offsets);
   }
+
 
 
   const reorderBlockByStart = (ids, groupIds, desiredStart) => {
@@ -856,13 +866,27 @@ const Tasks = () => {
     setMultiOffsets({});
   };
 
-  const DROP_MS = 260; // or 250–300, match dropAnimation duration
+  const [hiddenIds, setHiddenIds] = useState([]);
+  const hideTimeoutRef = useRef(null);
+  const DROP_MS = 260; // keep yours
+
 
   function handleDragEnd(event) {
     const { active, over } = event;
 
+    // no drop target (canceled drag)
     if (!over) {
-      setTimeout(resetDragState, DROP_MS);
+      const idsToHide = multiDragging.length ? multiDragging : [active.id];
+
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      setHiddenIds(idsToHide);
+
+      hideTimeoutRef.current = setTimeout(() => {
+        setHiddenIds([]);
+        hideTimeoutRef.current = null;
+        resetDragState();
+      }, DROP_MS);
+
       return;
     }
 
@@ -906,12 +930,19 @@ const Tasks = () => {
       }
     }
 
-    // clear drag state immediately so:
-    // - overlay disappears
-    // - base items become visible
-    // - Framer handles the final layout
+    // 👇 keep the real items hidden while the overlay finishes its drop animation
+    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    setHiddenIds(groupIds);
+
+    hideTimeoutRef.current = setTimeout(() => {
+      setHiddenIds([]);
+      hideTimeoutRef.current = null;
+    }, DROP_MS);
+
+    // overlay state reset (no delay needed now)
     resetDragState();
   }
+
 
 
 
@@ -1804,8 +1835,8 @@ const Tasks = () => {
                           const dateClass = getTaskDateClass(task);
                           const timeClass = getTaskTimeClass(task);
                           const isGroupDragging = isDragging && multiDragging.includes(task.id);
-                          const isBaseHidden =
-                            !!activeId && (activeId === task.id || multiDragging.includes(task.id));
+                          const isBaseHidden = hiddenIds.includes(task.id); // 👈 change here
+
                           return (
                             <SortableTaskItem
                               key={task.id}
@@ -1826,6 +1857,7 @@ const Tasks = () => {
                             />
                           );
                         })}
+
                       </AnimatePresence>
                     )}
 
@@ -1869,8 +1901,8 @@ const Tasks = () => {
                             {completedTasks.map(task => {
                               const { time, date } = formatTaskDate(task.due.parsedDate);
                               const isGroupDragging = isDragging && multiDragging.includes(task.id);
-                              const isBaseHidden =
-                                !!activeId && (activeId === task.id || multiDragging.includes(task.id))
+                              const isBaseHidden = hiddenIds.includes(task.id); // 👈 change here
+
                               return (
                                 <SortableTaskItem
                                   key={task.id}
@@ -1889,6 +1921,7 @@ const Tasks = () => {
                                 />
                               );
                             })}
+
 
                           </div>
                         </SortableContext>
