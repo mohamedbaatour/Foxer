@@ -1020,14 +1020,14 @@ margin-top: 0.5px;
 }
 
 .empty-state-logo {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   color: var(--color-text-muted);
 }
 
 .empty-state-text {
-  font-size: 18px;
-  font-weight: 550;
+  font-size: 16px;
+  font-weight: 400;
   color: var(--color-text-muted);
   margin: 0;
 }
