@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+
 import "./tasks.css";
 import { AnimatePresence, LayoutGroup, MotionConfig, delay, motion } from "framer-motion";
 import { DndContext, useDroppable, DragOverlay, pointerWithin, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
@@ -133,7 +134,9 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
-  isDraggingGlobal = false, // 👈 use global dragging flag
+  isDraggingGlobal = false,
+  draggedCount = 1,          // 👈 how many items in the drag block
+  isGroupDragging = false,   // 👈 already passed from parent
   ...props
 }) {
   const {
@@ -168,11 +171,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     else { isLateForPopup = true; const a = Math.abs(d); daysLeftText = `${a} day${a === 1 ? "" : "s"} late`; }
   }
 
-  // 🔑 Completely turn off layout while:
-  // - this item is the active draggable
-  // - OR it's the overlay
-  // - OR it's globally in a drag
-  // - OR it's one of the hidden base items in a multi-drag
   const disableLayout = isDragging || isOverlay || isDraggingGlobal || isBaseHidden;
 
   const menuRef = useRef(null);
@@ -196,10 +194,27 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [menuOpen]);
 
-  // dnd transform only for base item, not overlay, not hidden
+  // --- transform logic ---
+  let finalTransform = transform;
+
+  // scale neighbors’ translate by draggedCount so the gap matches the block height
+  if (
+    !isOverlay &&
+    !isBaseHidden &&
+    finalTransform &&
+    isDraggingGlobal &&
+    draggedCount > 1 &&
+    !isGroupDragging // don't touch the hidden base-group items
+  ) {
+    finalTransform = {
+      ...finalTransform,
+      y: finalTransform.y * draggedCount,
+    };
+  }
+
   const dndStyle =
-    !isOverlay && !isBaseHidden && transform
-      ? { transform: CSS.Transform.toString(transform), transition }
+    !isOverlay && !isBaseHidden && finalTransform
+      ? { transform: CSS.Transform.toString(finalTransform), transition }
       : {};
 
   return (
@@ -350,6 +365,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     </motion.div>
   );
 });
+
 
 
 
@@ -733,6 +749,8 @@ const Tasks = () => {
   const [multiDragging, setMultiDragging] = useState([]);
   const [multiOffsets, setMultiOffsets] = useState({});
 
+  const multiPointerOffsetYRef = useRef(0);
+
   const deleteTaskWithAnimation = (id, fromCompleted = false) => {
     setDeletingIds((s) => [...s, id]);
     setTimeout(() => {
@@ -773,8 +791,20 @@ const Tasks = () => {
     if (!baseRect) {
       setMultiDragging([]);
       setMultiOffsets({});
+      multiPointerOffsetYRef.current = 0;
       return;
     }
+
+    // 👇 compute group center vs active item center
+    const tops = Object.values(rects).map(r => r.top);
+    const bottoms = Object.values(rects).map(r => r.bottom);
+    const groupTop = Math.min(...tops);
+    const groupBottom = Math.max(...bottoms);
+    const groupCenter = (groupTop + groupBottom) / 2;
+    const activeCenter = (baseRect.top + baseRect.bottom) / 2;
+
+    // how much we must shift pointer.y so collisions use the group center
+    multiPointerOffsetYRef.current = groupCenter - activeCenter;
 
     const offsets = {};
     Object.entries(rects).forEach(([id, r]) => {
@@ -783,6 +813,7 @@ const Tasks = () => {
         y: r.top - baseRect.top,
       };
     });
+
 
     // 👇 keep base items hidden while dragging
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
@@ -864,10 +895,12 @@ const Tasks = () => {
     setIsDragging(false);
     setMultiDragging([]);
     setMultiOffsets({});
+    multiPointerOffsetYRef.current = 0;
   };
 
   const [hiddenIds, setHiddenIds] = useState([]);
   const hideTimeoutRef = useRef(null);
+
   const DROP_MS = 260; // keep yours
 
 
@@ -1249,6 +1282,38 @@ const Tasks = () => {
       },
     }),
   );
+
+  const collisionDetection = useCallback(
+    (args) => {
+      const { active, pointerCoordinates } = args;
+
+      // normal behavior when:
+      // - no pointer
+      // - not multi-drag
+      // - or offset not set
+      if (
+        !pointerCoordinates ||
+        multiDragging.length <= 1 ||
+        !multiDragging.includes(active.id) ||
+        !multiPointerOffsetYRef.current
+      ) {
+        return pointerWithin(args);
+      }
+
+      // 👇 pretend the pointer is at the group's center (shift Y)
+      const shiftedArgs = {
+        ...args,
+        pointerCoordinates: {
+          x: pointerCoordinates.x,
+          y: pointerCoordinates.y + multiPointerOffsetYRef.current,
+        },
+      };
+
+      return pointerWithin(shiftedArgs);
+    },
+    [multiDragging]
+  );
+
 
 
   return (
@@ -1809,11 +1874,12 @@ const Tasks = () => {
         <MotionConfig transition={{ layout: isDragging ? { duration: 0 } : { type: "spring", stiffness: 600, damping: 50 } }}>
           <LayoutGroup id="lists" layout>
             <DndContext
-              collisionDetection={pointerWithin}
+              collisionDetection={collisionDetection}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               sensors={sensors}
             >
+
 
               <DroppableContainer id="tasks">
                 <SortableContext
@@ -1835,7 +1901,8 @@ const Tasks = () => {
                           const dateClass = getTaskDateClass(task);
                           const timeClass = getTaskTimeClass(task);
                           const isGroupDragging = isDragging && multiDragging.includes(task.id);
-                          const isBaseHidden = hiddenIds.includes(task.id); // 👈 change here
+                          const isBaseHidden = hiddenIds.includes(task.id);
+                          const draggedCount = multiDragging.length || 1;  // 👈
 
                           return (
                             <SortableTaskItem
@@ -1854,9 +1921,11 @@ const Tasks = () => {
                               isDeleting={deletingIds.includes(task.id)}
                               isGroupDragging={isGroupDragging}
                               isBaseHidden={isBaseHidden}
+                              draggedCount={draggedCount}          // 👈
                             />
                           );
                         })}
+
 
                       </AnimatePresence>
                     )}
@@ -1901,7 +1970,8 @@ const Tasks = () => {
                             {completedTasks.map(task => {
                               const { time, date } = formatTaskDate(task.due.parsedDate);
                               const isGroupDragging = isDragging && multiDragging.includes(task.id);
-                              const isBaseHidden = hiddenIds.includes(task.id); // 👈 change here
+                              const isBaseHidden = hiddenIds.includes(task.id);
+                              const draggedCount = multiDragging.length || 1;  // 👈
 
                               return (
                                 <SortableTaskItem
@@ -1918,9 +1988,11 @@ const Tasks = () => {
                                   isDeleting={deletingIds.includes(task.id)}
                                   isGroupDragging={isGroupDragging}
                                   isBaseHidden={isBaseHidden}
+                                  draggedCount={draggedCount}          // 👈
                                 />
                               );
                             })}
+
 
 
                           </div>
