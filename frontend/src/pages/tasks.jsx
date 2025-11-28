@@ -758,7 +758,7 @@ const Tasks = () => {
   const defaultTasks = [
     {
       id: "1",
-      title: "Finish project notes",
+      title: "Mark this task complete",
       createdAt: nowDefault.toISOString(),
       updatedAt: nowDefault.toISOString(),
       due: {
@@ -771,7 +771,7 @@ const Tasks = () => {
     },
     {
       id: "2",
-      title: "Go to the gym",
+      title: "Reorder tasks by dragging",
       createdAt: nowDefault.toISOString(),
       updatedAt: nowDefault.toISOString(),
       due: {
@@ -784,7 +784,7 @@ const Tasks = () => {
     },
     {
       id: "3",
-      title: "Buy groceries",
+      title: "Edit a task title by clicking on it",
       createdAt: nowDefault.toISOString(),
       updatedAt: nowDefault.toISOString(),
       due: {
@@ -797,7 +797,7 @@ const Tasks = () => {
     },
     {
       id: "4",
-      title: "Plan weekend trip",
+      title: "Open the settings menu",
       createdAt: nowDefault.toISOString(),
       updatedAt: nowDefault.toISOString(),
       due: {
@@ -810,6 +810,21 @@ const Tasks = () => {
     },
   ];
 
+  const defaultCompletedTasks = [
+    {
+      id: "5",
+      title: "Drag and drop this in active tasks",
+      createdAt: nowDefault.toISOString(),
+      updatedAt: nowDefault.toISOString(),
+      due: {
+        originalInput: "today 6pm",
+        parsedDate: daysFromNow(3, 16),
+      },
+      completed: true,
+      focused: true,
+      deleted: false,
+    },
+  ];
 
 
   const [tasks, setTasks] = useState(() => {
@@ -819,7 +834,7 @@ const Tasks = () => {
 
   const [completedTasks, setCompletedTasks] = useState(() => {
     const savedTasks = localStorage.getItem("completedTasks");
-    return savedTasks ? JSON.parse(savedTasks) : [];
+    return savedTasks ? JSON.parse(savedTasks) : defaultCompletedTasks;
   });
 
   useEffect(() => {
@@ -1570,7 +1585,7 @@ const Tasks = () => {
             >
               It's {new Date().toLocaleString("en-US", { month: "short" })}{" "}
               {new Date().getDate()}. You have {tasks.length} remaining tasks,{" "}
-              <span className={todaysCount > 0 ? "today-count" : ""}>
+              <span className={todaysCount > 0 ? "today-count active" : "today-count"}>
                 {todaysCount} today
               </span>
               .

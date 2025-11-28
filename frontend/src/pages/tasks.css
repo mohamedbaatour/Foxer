@@ -104,6 +104,11 @@
 }
 
 .today-count {
+  color: var(--color-text-secondary);
+  transition: color 0.25s;
+}
+
+.today-count.active {
   color: var(--color-text-primary);
 }
 
