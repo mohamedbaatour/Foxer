@@ -15,7 +15,6 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 
-import _ from 'lodash';
 
 import { ReactComponent as Sun } from "../icons/sun.svg";
 import { ReactComponent as Moon } from "../icons/moon.svg";
@@ -32,7 +31,6 @@ import { ReactComponent as Clock } from "../icons/clock.svg";
 import { ReactComponent as ArrowDown } from "../icons/arrow-down.svg";
 import { ReactComponent as ArrowLeft } from "../icons/arrow-left.svg"
 import { ReactComponent as ArrowRight } from "../icons/arrow-right.svg"
-
 import { ReactComponent as SunTheme } from "../icons/sun-theme.svg";
 import { ReactComponent as MoonTheme } from "../icons/moon-theme.svg";
 import { ReactComponent as SystemTheme } from "../icons/system-theme.svg";
@@ -65,8 +63,8 @@ const gridV = {
   show: { opacity: 1, transition: { delayChildren: 0.03, staggerChildren: 0.012 } }
 };
 const cellV = {
-  hidden: { opacity: 0, y: 6 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 520, damping: 34 } }
+  hidden: { opacity: 0, y: 6, filter: "blur(4px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 520, damping: 34 } }
 };
 
 
@@ -112,6 +110,7 @@ const menuItem = {
     y: 0,
     x: 0,
     scale: 1,
+    filter: "blur(0px)",
     transition: { type: "spring", stiffness: 460, damping: 40, mass: 0.68 }
   },
   closed: {
@@ -119,6 +118,7 @@ const menuItem = {
     y: -6,
     x: 4,
     scale: 0.98,
+    filter: "blur(4px)",
     transition: { duration: 0.18, ease: EASE_SOFT }
   }
 };
@@ -162,7 +162,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   const commitTitle = useCallback(() => {
     if (!onTitleCommit || !titleRef.current) return;
     const raw = titleRef.current.innerText;
-    const next = _.trim(raw.replace(/\s+/g, " "));
+    const next = raw.replace(/\s+/g, " ").trim();
     if (!next) {
       titleRef.current.innerText = task.title;
       return;
@@ -592,7 +592,7 @@ const Tasks = () => {
 
 
   const handleTitleCommit = (id, title, fromCompleted = false) => {
-    const v = _.trim(title);
+    const v = title.trim();
     if (!v) return;
     const nowIso = new Date().toISOString();
 
@@ -1808,7 +1808,7 @@ const Tasks = () => {
             }}
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                const val = _.trim(inputRef.current?.value)
+                const val = inputRef.current?.value.trim();
                 if (val) {
                   addTask(val)
                   setIsInputFocused(false)

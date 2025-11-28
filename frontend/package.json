@@ -5,20 +5,11 @@
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@formkit/auto-animate": "^0.9.0",
-    "@mui/material": "^7.3.4",
-    "@mui/x-date-pickers": "^8.14.1",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
     "canvas-confetti": "^1.9.3",
     "chrono-node": "^2.9.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
-    "motion": "^12.23.6",
+    "framer-motion": "^12.23.24",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hotkeys-hook": "^5.2.1",
@@ -28,14 +19,14 @@
     "selecto": "^1.26.3",
     "web-vitals": "^2.1.4"
   },
-"scripts": {
-  "start": "react-scripts start",
-  "build:raw": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
-  "build-sw": "node workbox-build.js",
-  "build": "npm run build:raw && npm run build-sw",
-  "test": "react-scripts test",
-  "eject": "react-scripts eject"
-},
+  "scripts": {
+    "start": "react-scripts start",
+    "build:raw": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build-sw": "node workbox-build.js",
+    "build": "npm run build:raw && npm run build-sw",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
