@@ -132,12 +132,13 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDelete,
   onDuplicate,
   onTitleCommit,
+  onDateChange,          // 👈 new: gets Date from the inline calendar
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
   isDraggingGlobal = false,
-  draggedCount = 1,          // 👈 how many items in the drag block
-  isGroupDragging = false,   // 👈 already passed from parent
+  draggedCount = 1,
+  isGroupDragging = false,
   ...props
 }) {
   const {
@@ -163,13 +164,48 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     const raw = titleRef.current.innerText;
     const next = _.trim(raw.replace(/\s+/g, " "));
     if (!next) {
-      // empty -> revert
       titleRef.current.innerText = task.title;
       return;
     }
     if (next !== task.title) onTitleCommit(next);
     else titleRef.current.innerText = task.title;
   }, [onTitleCommit, task.title]);
+
+  // --- inline calendar state for THIS task ---
+  const [dateCalOpen, setDateCalOpen] = React.useState(false);
+  const [dateMonth, setDateMonth] = React.useState(() =>
+    task?.due?.parsedDate ? new Date(task.due.parsedDate) : new Date()
+  );
+  const dateAnchorRef = React.useRef(null);
+  const datePopRef = React.useRef(null);
+
+  const selectedTaskDate = task?.due?.parsedDate
+    ? new Date(task.due.parsedDate)
+    : null;
+
+  React.useEffect(() => {
+    if (!dateCalOpen) return;
+
+    // always re-read from task when opening
+    const base = task?.due?.parsedDate
+      ? new Date(task.due.parsedDate)
+      : new Date();
+
+    setDateMonth(base);
+
+    const handleOutside = (e) => {
+      if (
+        !datePopRef.current?.contains(e.target) &&
+        !dateAnchorRef.current?.contains(e.target)
+      ) {
+        setDateCalOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutside);
+    return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [dateCalOpen, task?.due?.parsedDate]); // 👈 no selectedTaskDate here
+
 
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
@@ -210,17 +246,15 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [menuOpen]);
 
-  // --- transform logic ---
   let finalTransform = transform;
 
-  // scale neighbors’ translate by draggedCount so the gap matches the block height
   if (
     !isOverlay &&
     !isBaseHidden &&
     finalTransform &&
     isDraggingGlobal &&
     draggedCount > 1 &&
-    !isGroupDragging // don't touch the hidden base-group items
+    !isGroupDragging
   ) {
     finalTransform = {
       ...finalTransform,
@@ -297,10 +331,22 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
         </p>
       </div>
 
-      <div className="task-item-right">
+      <div className="task-item-right" style={{ position: "relative" }}>
         <span className={`task-time ${props.timeClass}`}>{props.time}</span>
-        <div className="task-date-wrapper">
-          <span className={`task-date ${props.dateClass}`}>{props.date}</span>
+
+        <div
+          className={`task-date-wrapper${dateCalOpen ? " calendar-open" : ""}`}
+          ref={dateAnchorRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isOverlay) return;
+            setTimeout(() => {
+              setDateCalOpen(s => !s);
+            }, 40);
+          }}
+        >
+
+          <motion.span className={`task-date ${props.dateClass}`}>{props.date}</motion.span>
           {dueForPopup && !task.completed && (
             <motion.div
               className={`task-date-popup${isLateForPopup ? " late" : ""} ${isNearForPopup ? " near" : ""}`}
@@ -310,6 +356,128 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
               {daysLeftText}
             </motion.div>
           )}
+
+          <AnimatePresence>
+            {dateCalOpen && !isOverlay && (
+              <motion.div
+                key="task-calendar-popup"
+                ref={datePopRef}
+                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.8, 0.3, 1] }}
+                className="calendar-popup"
+                style={{
+                  position: "absolute",
+                  top: (dateAnchorRef.current?.offsetTop || 0) + 38,
+                  right: -47,
+                  zIndex: 3000,
+                  transformOrigin: "top right",
+                  willChange: "transform, opacity",
+                }}
+                onClick={e => e.stopPropagation()}
+                layout
+              >
+                {(() => {
+                  const monthStart = startOfMonth(dateMonth);
+                  const monthEnd = endOfMonth(dateMonth);
+                  const startDate = startOfWeek(monthStart);
+                  const endDate = endOfWeek(monthEnd);
+
+                  const rows = [];
+                  let days = [];
+                  let day = startDate;
+
+                  while (day <= endDate) {
+                    for (let i = 0; i < 7; i++) {
+                      const clone = day;
+                      const isPast = day < new Date().setHours(0, 0, 0, 0);
+                      const isSelected =
+                        selectedTaskDate && isSameDay(day, selectedTaskDate);
+
+                      days.push(
+                        <motion.button
+                          key={day.getTime()}
+                          variants={cellV}
+                          whileHover={!isPast ? { scale: 1.04 } : {}}
+                          whileTap={!isPast ? { scale: 0.96 } : {}}
+                          disabled={isPast}
+                          className={
+                            "calendar-day" +
+                            (!isSameMonth(day, dateMonth) ? " dim" : "") +
+                            (isPast ? " disabled" : "") +
+                            (isSelected ? " selected" : "")
+                          }
+                          onClick={() => {
+                            if (isPast) return;
+
+                            setDateCalOpen(false);
+
+                            if (onDateChange) {
+                              setTimeout(() => {
+                                onDateChange(clone);
+                              }, 100);
+                            }
+                          }}
+
+                        >
+                          {format(day, "d")}
+                        </motion.button>
+                      );
+                      day = addDays(day, 1);
+                    }
+                    rows.push(
+                      <div className="calendar-row" key={day.getTime()}>
+                        {days}
+                      </div>
+                    );
+                    days = [];
+                  }
+
+                  return (
+                    <div className="calendar-box">
+                      <div className="calendar-head">
+                        <button
+                          type="button"
+                          className="calendar-arrow-container"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setDateMonth(m => subMonths(m, 1));
+                          }}
+                        >
+                          <ArrowLeft className="calendar-arrow" />
+                        </button>
+
+                        <span>{format(dateMonth, "MMMM yyyy")}</span>
+
+                        <button
+                          type="button"
+                          className="calendar-arrow-container"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setDateMonth(m => addMonths(m, 1));
+                          }}
+                        >
+                          <ArrowRight className="calendar-arrow" />
+                        </button>
+
+                      </div>
+
+                      <motion.div
+                        key={dateMonth.getTime()}
+                        variants={gridV}
+                        initial="hidden"
+                        animate="show"
+                        className="calendar-body"
+                      >
+                        {rows}
+                      </motion.div>
+                    </div>
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div
@@ -401,6 +569,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     </motion.div>
   );
 });
+
 
 
 
@@ -1365,6 +1534,33 @@ const Tasks = () => {
     [multiDragging]
   );
 
+  const handleTaskDateChange = (id, fromCompleted, pickedDate) => {
+    const mergeDate = t => {
+      const base = t?.due?.parsedDate ? new Date(t.due.parsedDate) : new Date();
+      const d = new Date(pickedDate);
+      d.setHours(
+        base.getHours(),
+        base.getMinutes(),
+        base.getSeconds(),
+        base.getMilliseconds()
+      );
+      return {
+        ...t,
+        due: { ...t.due, parsedDate: d.toISOString() },
+        updatedAt: new Date().toISOString(),
+      };
+    };
+
+    if (fromCompleted) {
+      setCompletedTasks(prev =>
+        prev.map(t => (t.id === id ? mergeDate(t) : t))
+      );
+    } else {
+      setTasks(prev =>
+        prev.map(t => (t.id === id ? mergeDate(t) : t))
+      );
+    }
+  };
 
 
   return (
@@ -1969,7 +2165,8 @@ const Tasks = () => {
                               onCheck={() => handleCheck(task, false)}
                               onDelete={(id) => deleteTaskWithAnimation(id, false)}
                               onDuplicate={(id) => duplicateTask(id, false)}
-                              onTitleCommit={(title) => handleTitleCommit(task.id, title, false)}   // 👈
+                              onTitleCommit={(title) => handleTitleCommit(task.id, title, false)}
+                              onDateChange={(newDate) => handleTaskDateChange(task.id, false, newDate)}
                               isDraggingGlobal={isDragging}
                               isDeleting={deletingIds.includes(task.id)}
                               isGroupDragging={isGroupDragging}
@@ -2044,7 +2241,8 @@ const Tasks = () => {
                                     onCheck={() => handleCheck(task, true)}
                                     onDelete={(id) => deleteTaskWithAnimation(id, true)}
                                     onDuplicate={(id) => duplicateTask(id, true)}
-                                    onTitleCommit={(title) => handleTitleCommit(task.id, title, true)}    // 👈
+                                    onTitleCommit={(title) => handleTitleCommit(task.id, title, true)}
+                                    onDateChange={(newDate) => handleTaskDateChange(task.id, true, newDate)}
                                     isDraggingGlobal={isDragging}
                                     isDeleting={deletingIds.includes(task.id)}
                                     isGroupDragging={isGroupDragging}

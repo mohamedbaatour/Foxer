@@ -773,6 +773,8 @@ margin-top: 0.5px;
   position: relative;
   display: inline-flex;
   align-items: center;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .task-date-popup {
@@ -804,11 +806,13 @@ margin-top: 0.5px;
 }
 
 .task-date-wrapper:hover .task-date-popup,
-.task-date-wrapper:focus-within .task-date-popup {
+.task-date-wrapper:focus-within .task-date-popup,
+.task-date-wrapper.calendar-open .task-date-popup {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
+
 
 .task-dots-container {
   display: flex;
@@ -928,22 +932,7 @@ margin-top: 0.5px;
   background-color: rgba(179, 38, 38, 0.1);
 }
 
-@keyframes pulse-twice {
-  0%,
-  10% {
-    background-color: rgba(179, 38, 38, 0.1);
-  }
-  5% {
-    background-color: rgba(179, 38, 38, 0.25);
-  }
-  15% {
-    background-color: rgba(179, 38, 38, 0.25);
-  }
-  20%,
-  100% {
-    background-color: rgba(179, 38, 38, 0.1);
-  }
-}
+
 
 .task-date-warning {
   color: var(--color-warning);
