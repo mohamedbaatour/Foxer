@@ -132,7 +132,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDelete,
   onDuplicate,
   onTitleCommit,
-  onDateChange,          // 👈 new: gets Date from the inline calendar
+  onDateChange,
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
@@ -171,13 +171,23 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     else titleRef.current.innerText = task.title;
   }, [onTitleCommit, task.title]);
 
-  // --- inline calendar state for THIS task ---
   const [dateCalOpen, setDateCalOpen] = React.useState(false);
   const [dateMonth, setDateMonth] = React.useState(() =>
     task?.due?.parsedDate ? new Date(task.due.parsedDate) : new Date()
   );
   const dateAnchorRef = React.useRef(null);
   const datePopRef = React.useRef(null);
+
+  useHotkeys(
+    'esc',
+    (e) => {
+      if (!dateCalOpen) return;
+      e.preventDefault();
+      setDateCalOpen(false);
+    },
+    { enableOnTags: ['*'], keydown: true }
+  );
+
 
   const selectedTaskDate = task?.due?.parsedDate
     ? new Date(task.due.parsedDate)
@@ -186,7 +196,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   React.useEffect(() => {
     if (!dateCalOpen) return;
 
-    // always re-read from task when opening
     const base = task?.due?.parsedDate
       ? new Date(task.due.parsedDate)
       : new Date();
@@ -204,7 +213,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
     document.addEventListener("pointerdown", handleOutside);
     return () => document.removeEventListener("pointerdown", handleOutside);
-  }, [dateCalOpen, task?.due?.parsedDate]); // 👈 no selectedTaskDate here
+  }, [dateCalOpen, task?.due?.parsedDate]);
 
 
   const [justChecked, setJustChecked] = React.useState(false);
@@ -625,9 +634,6 @@ const Tasks = () => {
       if (inputRef.current && inputRef.current.contains(e.target)) return;
       if (containerRef.current && containerRef.current.contains(e.target)) return;
 
-      // Check if click is in a portal (like time picker dropdown if it was a portal, but here it's inline)
-      // Just in case, we can check if the target is within the containerRef which wraps everything
-
       setIsInputFocused(false);
     };
 
@@ -635,7 +641,6 @@ const Tasks = () => {
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [isInputFocused]);
 
-  // Close pickers when input loses focus
   useEffect(() => {
     if (!isInputFocused) {
       setTimePickerOpen(false);
@@ -664,13 +669,6 @@ const Tasks = () => {
   }, [timePickerOpen]);
 
 
-
-  // useEffect(() => {
-  //   try {
-  //     if (selectedDate) localStorage.setItem("selectedDate", selectedDate.toISOString());
-  //    else localStorage.removeItem("selectedDate");
-  //   } catch (e) { }
-  // }, [selectedDate]);
 
   const addTask = (title) => {
     const nowIso = new Date().toISOString();
@@ -1015,7 +1013,6 @@ const Tasks = () => {
       return;
     }
 
-    // 👇 compute group center vs active item center
     const tops = Object.values(rects).map(r => r.top);
     const bottoms = Object.values(rects).map(r => r.bottom);
     const groupTop = Math.min(...tops);
@@ -1023,7 +1020,6 @@ const Tasks = () => {
     const groupCenter = (groupTop + groupBottom) / 2;
     const activeCenter = (baseRect.top + baseRect.bottom) / 2;
 
-    // how much we must shift pointer.y so collisions use the group center
     multiPointerOffsetYRef.current = groupCenter - activeCenter;
 
     const offsets = {};
@@ -1034,8 +1030,6 @@ const Tasks = () => {
       };
     });
 
-
-    // 👇 keep base items hidden while dragging
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     setHiddenIds(group);
 
@@ -1121,13 +1115,12 @@ const Tasks = () => {
   const [hiddenIds, setHiddenIds] = useState([]);
   const hideTimeoutRef = useRef(null);
 
-  const DROP_MS = 260; // keep yours
+  const DROP_MS = 260;
 
 
   function handleDragEnd(event) {
     const { active, over } = event;
 
-    // no drop target (canceled drag)
     if (!over) {
       const idsToHide = multiDragging.length ? multiDragging : [active.id];
 
@@ -1183,7 +1176,6 @@ const Tasks = () => {
       }
     }
 
-    // 👇 keep the real items hidden while the overlay finishes its drop animation
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     setHiddenIds(groupIds);
 
@@ -1192,7 +1184,6 @@ const Tasks = () => {
       hideTimeoutRef.current = null;
     }, DROP_MS);
 
-    // overlay state reset (no delay needed now)
     resetDragState();
   }
 
@@ -1457,12 +1448,9 @@ const Tasks = () => {
     const r = results[0];
     const dateObj = r.start.date();
 
-    // Update date only if user didn't manually override
     if (!manualDateSet) {
       setSelectedDate(dateObj);
     }
-
-    // Update time only if user didn't manually override
     if (!manualTimeSet) {
       setSelectedTime(
         dayjs().hour(dateObj.getHours()).minute(dateObj.getMinutes())
@@ -1483,7 +1471,7 @@ const Tasks = () => {
       if (!right) return;
 
       const w = right.getBoundingClientRect().width;
-      inputRef.current.style.paddingRight = `${w + 20}px`; // 20 = breathing gap
+      inputRef.current.style.paddingRight = `${w + 20}px`;
     };
 
     updatePadding();
@@ -1498,7 +1486,7 @@ const Tasks = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // prevents accidental triggers
+        distance: 8,
       },
     }),
   );
@@ -1507,10 +1495,6 @@ const Tasks = () => {
     (args) => {
       const { active, pointerCoordinates } = args;
 
-      // normal behavior when:
-      // - no pointer
-      // - not multi-drag
-      // - or offset not set
       if (
         !pointerCoordinates ||
         multiDragging.length <= 1 ||
@@ -1520,7 +1504,6 @@ const Tasks = () => {
         return pointerWithin(args);
       }
 
-      // 👇 pretend the pointer is at the group's center (shift Y)
       const shiftedArgs = {
         ...args,
         pointerCoordinates: {
@@ -1793,7 +1776,6 @@ const Tasks = () => {
             className="task-add-input"
             onFocus={() => setIsInputFocused(true)}
             onBlur={() => {
-              // Delay blur to allow interaction flags to be set
               setTimeout(() => {
                 if (isInteractingWithControls.current) return;
                 setIsInputFocused(false);
@@ -1822,14 +1804,12 @@ const Tasks = () => {
               }
 
               if (e.key === 'Escape') {
-                // only blur if no popup is open
                 const noPopups = !calendarOpen && !timePickerOpen
                 if (noPopups) {
                   inputRef.current?.blur()
                   setIsInputFocused(false)
                 }
 
-                // always close open popups
                 if (timePickerOpen) setTimePickerOpen(false)
                 if (calendarOpen) setCalendarOpen(false)
               }
@@ -1840,19 +1820,16 @@ const Tasks = () => {
           <div
             className="task-input-right"
             onMouseDown={(e) => {
-              // Prevent focus loss on desktop
               e.preventDefault();
               isInteractingWithControls.current = true;
             }}
             onTouchStart={(e) => {
-              // Prevent focus loss on mobile
               e.preventDefault();
               isInteractingWithControls.current = true;
             }}
             onPointerDown={(e) => {
               e.preventDefault();
               isInteractingWithControls.current = true;
-              // Reset flag after a delay to allow click to process
               setTimeout(() => { isInteractingWithControls.current = false; }, 500);
             }}
           >
@@ -1904,7 +1881,7 @@ const Tasks = () => {
                     <AnimatePresence mode="wait" initial={false}>
                       {selectedTime && (
                         <motion.span
-                          key={selectedTime.format("HH:mm")} // unique key forces animation on change
+                          key={selectedTime.format("HH:mm")}
                           className="chip-time-label"
                           initial={{ opacity: 0, y: 6, scale: 0.92 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
