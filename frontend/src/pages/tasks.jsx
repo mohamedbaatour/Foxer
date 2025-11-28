@@ -42,7 +42,6 @@ import { ReactComponent as Twitter } from "../icons/twitter.svg";
 import { ReactComponent as Changelog } from "../icons/changelog.svg";
 import { ReactComponent as Logo } from "../icons/logo.svg";
 
-import * as chrono from "chrono-node";
 
 import { usePageTitle } from "../hooks/usePageTitle";
 
@@ -1449,9 +1448,18 @@ const Tasks = () => {
   }, [headerMenuOpen]);
 
 
+  let chronoCache = null;
 
-  const liveParseNatural = (raw) => {
-    const results = chrono.parse(raw);
+  const lazyParseDate = async (raw) => {
+    if (!chronoCache) {
+      chronoCache = await import("chrono-node");
+    }
+    return chronoCache.parse(raw);
+  };
+
+  const liveParseNatural = async (raw) => {
+    const results = await lazyParseDate(raw);
+
 
     if (!results.length) {
       if (!manualDateSet) setNlDate(null);
