@@ -609,7 +609,7 @@
 }
 
 .task-item:hover {
-  max-height: 300px;
+  max-height: 600px;
 }
 
 /* .task-item:hover {
@@ -707,20 +707,52 @@ margin-top: 0.5px;
   background-color: var(--color-border);
   transform: scale(0.95);
 }
-
 .task-title {
   display: block;
   font-size: 16px;
   font-weight: 500;
-  letter-spacing: 0.1px;
+  letter-spacing: .1px;
+  margin: -1px 0 0 0;
   text-align: left;
-  max-width: 360px;
+  max-width: 350px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-right: 16px;
-  transition: max-width 0s 0.5s, overflow 0s 0.5s, white-space 0s 0.5s, text-overflow 0s 0.5s;
+
+  padding: 0 4px;
+
+  border: 1px solid #0000;
+  border-radius: 4px;
+
+  transition:
+    /* max-width 0s .5s,
+    overflow 0s .5s,
+    white-space 0s .5s,
+    text-overflow 0s .5s, */
+    border 0.2s ease-in-out;
 }
+
+.task-title:hover {
+  cursor: pointer;
+  border: 1px solid var(--color-border-2)       
+}
+
+.task-title[contenteditable="true"]:focus {
+  outline: none;
+  border: 1px solid var(--color-text-primary);        
+    max-width: none;
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  text-overflow: clip;
+}
+
+
+.task-item:has(.task-title[contenteditable="true"]:focus) {
+  max-height: 600px;
+}
+
+
 
 .task-item:hover .task-title {
   max-width: none;
@@ -728,7 +760,6 @@ margin-top: 0.5px;
   white-space: normal;
   word-wrap: break-word;
   text-overflow: clip;
-  transition: max-width 0s, overflow 0s, white-space 0s, text-overflow 0s;
 }
 
 .task-item-right {
@@ -749,7 +780,7 @@ margin-top: 0.5px;
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(6px);
-  /* background: var(--color-surface-2); */
+  background: rgba(58, 58, 58, 0.1);
   backdrop-filter: blur(8px);
   color: var(--color-text-primary);
   border: 0.5px solid var(--color-border);
@@ -762,7 +793,6 @@ margin-top: 0.5px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 10;
 }
 
 .task-date-popup.late {
@@ -1106,9 +1136,6 @@ margin-top: 0.5px;
 }
 
 @media (max-width: 400px) {
-  .tasks-container {
-    /* padding: 0 16px !important; */
-  }
 
   .task-title {
     max-width: 100px;

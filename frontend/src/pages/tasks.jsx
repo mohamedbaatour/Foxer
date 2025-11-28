@@ -131,6 +131,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onCheck,
   onDelete,
   onDuplicate,
+  onTitleCommit,
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
@@ -154,6 +155,21 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       return defaultAnimateLayoutChanges(args);
     },
   });
+
+  const titleRef = useRef(null);
+
+  const commitTitle = useCallback(() => {
+    if (!onTitleCommit || !titleRef.current) return;
+    const raw = titleRef.current.innerText;
+    const next = _.trim(raw.replace(/\s+/g, " "));
+    if (!next) {
+      // empty -> revert
+      titleRef.current.innerText = task.title;
+      return;
+    }
+    if (next !== task.title) onTitleCommit(next);
+    else titleRef.current.innerText = task.title;
+  }, [onTitleCommit, task.title]);
 
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
@@ -258,7 +274,27 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           {(task.completed || justChecked) && <Check className="check-icon" />}
         </motion.div>
 
-        <p className="task-title">{task.title}</p>
+        <p
+          ref={titleRef}
+          className="task-title"
+          contentEditable={!isOverlay}
+          suppressContentEditableWarning
+          onBlur={commitTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitTitle();
+              e.currentTarget.blur();
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              if (titleRef.current) titleRef.current.innerText = task.title;
+              e.currentTarget.blur();
+            }
+          }}
+        >
+          {task.title}
+        </p>
       </div>
 
       <div className="task-item-right">
@@ -377,6 +413,21 @@ const Tasks = () => {
   const nav = useNavigate();
 
 
+  const handleTitleCommit = (id, title, fromCompleted = false) => {
+    const v = _.trim(title);
+    if (!v) return;
+    const nowIso = new Date().toISOString();
+
+    if (fromCompleted) {
+      setCompletedTasks(prev =>
+        prev.map(t => t.id === id ? { ...t, title: v, updatedAt: nowIso } : t)
+      );
+    } else {
+      setTasks(prev =>
+        prev.map(t => t.id === id ? { ...t, title: v, updatedAt: nowIso } : t)
+      );
+    }
+  };
 
 
   function DroppableContainer({ id, children }) {
@@ -1881,6 +1932,7 @@ const Tasks = () => {
             >
 
 
+
               <DroppableContainer id="tasks">
                 <SortableContext
                   items={tasks.map((t) => t.id)}
@@ -1892,7 +1944,7 @@ const Tasks = () => {
                         className="empty-state"
                       >
                         <Logo className="empty-state-logo" />
-                        <p className="empty-state-text">No tasks remaining!</p>
+                        <p className="empty-state-text">No tasks remaining</p>
                       </div>
                     ) : (
                       <AnimatePresence initial={false}>
@@ -1902,7 +1954,7 @@ const Tasks = () => {
                           const timeClass = getTaskTimeClass(task);
                           const isGroupDragging = isDragging && multiDragging.includes(task.id);
                           const isBaseHidden = hiddenIds.includes(task.id);
-                          const draggedCount = multiDragging.length || 1;  // 👈
+                          const draggedCount = multiDragging.length || 1;
 
                           return (
                             <SortableTaskItem
@@ -1917,11 +1969,12 @@ const Tasks = () => {
                               onCheck={() => handleCheck(task, false)}
                               onDelete={(id) => deleteTaskWithAnimation(id, false)}
                               onDuplicate={(id) => duplicateTask(id, false)}
+                              onTitleCommit={(title) => handleTitleCommit(task.id, title, false)}   // 👈
                               isDraggingGlobal={isDragging}
                               isDeleting={deletingIds.includes(task.id)}
                               isGroupDragging={isGroupDragging}
                               isBaseHidden={isBaseHidden}
-                              draggedCount={draggedCount}          // 👈
+                              draggedCount={draggedCount}
                             />
                           );
                         })}
@@ -1934,10 +1987,11 @@ const Tasks = () => {
                 </SortableContext>
               </DroppableContainer>
 
+
               <div className="completed-tasks-list" ref={completedRef}>
                 <div className="completed-tasks-header">
                   <div
-                    className={`completed-tasks-line ${isCompletedTasksOpen && completedTasks.length > 0
+                    className={`completed-tasks-line ${isCompletedTasksOpen
                       ? "line-expand"
                       : "line-hidden"
                       }`}
@@ -1946,7 +2000,7 @@ const Tasks = () => {
                     Completed ({completedTasks.length})
                   </p>
                   <div
-                    className={`completed-tasks-line ${isCompletedTasksOpen && completedTasks.length > 0
+                    className={`completed-tasks-line ${isCompletedTasksOpen
                       ? "line-expand"
                       : "line-hidden"
                       }`}
@@ -1956,48 +2010,57 @@ const Tasks = () => {
                   {isCompletedTasksOpen && (
                     <motion.div
                       style={{ width: "100%" }}
-                      initial={{ opacity: 0, y: 8, scale: 0.995 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.995 }}
-                      transition={{ duration: 0.28, ease: [0.25, 0.8, 0.3, 1] }}
+                      initial={{ opacity: 0, y: 8, scale: 0.995, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: 8, scale: 0.995, filter: "blur(8px)" }}
+                      transition={{ duration: 0.6, ease: [0.25, 0.8, 0.3, 1] }}
                     >
-                      <DroppableContainer id="completedTasks">
-                        <SortableContext
-                          items={completedTasks.map((t) => t.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="tasks-list-container">
-                            {completedTasks.map(task => {
-                              const { time, date } = formatTaskDate(task.due.parsedDate);
-                              const isGroupDragging = isDragging && multiDragging.includes(task.id);
-                              const isBaseHidden = hiddenIds.includes(task.id);
-                              const draggedCount = multiDragging.length || 1;  // 👈
+                      {completedTasks.length === 0 ? (
+                        <motion.div initial={{ scale: 0.995, opacity: 0, filter: "blur(8px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }} exit={{ scale: 0.995, opacity: 0, filter: "blur(8px)" }} transition={{ duration: 0.5, ease: [0.25, 0.8, 0.3, 1] }} className="empty-state">
+                          <Logo className="empty-state-logo" />
+                          <p className="empty-state-text">No completed tasks</p>
+                        </motion.div>
+                      ) : (
+                        <DroppableContainer id="completedTasks">
+                          <SortableContext
+                            items={completedTasks.map((t) => t.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="tasks-list-container">
+                              {completedTasks.map(task => {
+                                const { time, date } = formatTaskDate(task.due.parsedDate);
+                                const isGroupDragging = isDragging && multiDragging.includes(task.id);
+                                const isBaseHidden = hiddenIds.includes(task.id);
+                                const draggedCount = multiDragging.length || 1;
 
-                              return (
-                                <SortableTaskItem
-                                  key={task.id}
-                                  task={task}
-                                  time={time}
-                                  date={date}
-                                  dateClass={getTaskDateClass(task)}
-                                  timeClass={getTaskTimeClass(task)}
-                                  onCheck={() => handleCheck(task, true)}
-                                  onDelete={(id) => deleteTaskWithAnimation(id, true)}
-                                  onDuplicate={(id) => duplicateTask(id, true)}
-                                  isDraggingGlobal={isDragging}
-                                  isDeleting={deletingIds.includes(task.id)}
-                                  isGroupDragging={isGroupDragging}
-                                  isBaseHidden={isBaseHidden}
-                                  draggedCount={draggedCount}          // 👈
-                                />
-                              );
-                            })}
+                                return (
+                                  <SortableTaskItem
+                                    key={task.id}
+                                    task={task}
+                                    time={time}
+                                    date={date}
+                                    dateClass={getTaskDateClass(task)}
+                                    timeClass={getTaskTimeClass(task)}
+                                    onCheck={() => handleCheck(task, true)}
+                                    onDelete={(id) => deleteTaskWithAnimation(id, true)}
+                                    onDuplicate={(id) => duplicateTask(id, true)}
+                                    onTitleCommit={(title) => handleTitleCommit(task.id, title, true)}    // 👈
+                                    isDraggingGlobal={isDragging}
+                                    isDeleting={deletingIds.includes(task.id)}
+                                    isGroupDragging={isGroupDragging}
+                                    isBaseHidden={isBaseHidden}
+                                    draggedCount={draggedCount}
+                                  />
+                                );
+                              })}
 
 
 
-                          </div>
-                        </SortableContext>
-                      </DroppableContainer>
+
+                            </div>
+                          </SortableContext>
+                        </DroppableContainer>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
