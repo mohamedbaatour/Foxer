@@ -155,6 +155,7 @@
   border-radius: 12px;
   padding: 14px;
   z-index: 99999;
+  cursor: default;
   overflow: hidden;
   transform-origin: top right;
   will-change: transform, opacity;
@@ -658,7 +659,13 @@ margin-top: 0.5px;
   height: 21px;
   color: var(--color-border-2);
   cursor: grab;
+  transition: color 0.2s ease-in-out;
 }
+
+.drag-handle-icon:hover {
+  color: var(--color-border-3);
+}
+
 
 .check-square {
   min-width: 17px;

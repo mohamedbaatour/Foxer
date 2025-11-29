@@ -285,18 +285,70 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
 
+
   const nowForPopup = new Date();
   const dueForPopup = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
-  let daysLeftText = "", isNearForPopup = false, isLateForPopup = false;
+
+  let daysLeftText = "";
+  let popupTone = "";
+
   if (dueForPopup) {
-    const todayMid = new Date(nowForPopup.getFullYear(), nowForPopup.getMonth(), nowForPopup.getDate());
-    const dueMid = new Date(dueForPopup.getFullYear(), dueForPopup.getMonth(), dueForPopup.getDate());
-    const d = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24));
-    if (d > 1) daysLeftText = `${d} days left`;
-    else if (d === 1) { daysLeftText = "1 day left"; isNearForPopup = true; }
-    else if (d === 0) { daysLeftText = "Due today"; isNearForPopup = true; }
-    else { isLateForPopup = true; const a = Math.abs(d); daysLeftText = `${a} day${a === 1 ? "" : "s"} late`; }
+    const todayMid = new Date(
+      nowForPopup.getFullYear(),
+      nowForPopup.getMonth(),
+      nowForPopup.getDate()
+    );
+    const dueMid = new Date(
+      dueForPopup.getFullYear(),
+      dueForPopup.getMonth(),
+      dueForPopup.getDate()
+    );
+
+    const d = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24)); // day diff (calendar)
+    const diffMs = dueForPopup.getTime() - nowForPopup.getTime();       // exact time diff
+    const sign = diffMs >= 0 ? 1 : -1;
+    const totalMinutes = Math.max(0, Math.round(Math.abs(diffMs) / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const suffix = sign >= 0 ? "left" : "late";
+
+    if (d > 1) {
+      daysLeftText = `${d} days left`;
+    } else if (d === 1) {
+      daysLeftText = "1 day left";
+    } else if (d === 0) {
+      // 🔥 Same calendar day -> show hours/minutes
+      if (totalMinutes === 0) {
+        daysLeftText = sign >= 0 ? "Due now" : "Just late";
+      } else if (hours === 0) {
+        // < 1 hour
+        daysLeftText = `${totalMinutes}m ${suffix}`;
+      } else {
+        // 1h+ (with zero-padded minutes)
+        const mm = minutes.toString().padStart(2, "0");
+        daysLeftText =
+          minutes > 0
+            ? `${hours}h ${mm}m ${suffix}`
+            : `${hours}h ${suffix}`;
+      }
+    } else {
+      // d < 0 and not same day -> classic "X days late"
+      const a = Math.abs(d);
+      daysLeftText = `${a} day${a === 1 ? "" : "s"} late`;
+    }
+
+    // 🔗 Sync tone with the same chip class
+    if (props.dateClass === "task-date-error") {
+      popupTone = "late";
+    } else if (props.dateClass === "task-date-warning") {
+      popupTone = "near";
+    } else if (props.dateClass === "task-date-accent") {
+      popupTone = "accent";
+    } else if (props.dateClass === "task-date-completed") {
+      popupTone = "completed";
+    }
   }
+
 
   const disableLayout = isDragging || isOverlay || isDraggingGlobal || isBaseHidden;
 
@@ -500,7 +552,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
           {dueForPopup && !task.completed && (
             <motion.div
-              className={`task-date-popup${isLateForPopup ? " late" : ""} ${isNearForPopup ? " near" : ""}`}
+              className={`task-date-popup ${popupTone}`}
               role="tooltip"
               aria-hidden={isOverlay ? "true" : "false"}
             >
