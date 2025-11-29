@@ -124,7 +124,6 @@ const menuItem = {
 
 
 
-
 const SortableTaskItem = React.memo(function SortableTaskItem({
   task,
   onCheck,
@@ -132,6 +131,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDuplicate,
   onTitleCommit,
   onDateChange,
+  onTimeChange,          // 👈 time change handler
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
@@ -170,6 +170,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     else titleRef.current.innerText = task.title;
   }, [onTitleCommit, task.title]);
 
+  // --- DATE CALENDAR (per task) ---
   const [dateCalOpen, setDateCalOpen] = React.useState(false);
   const [dateMonth, setDateMonth] = React.useState(() =>
     task?.due?.parsedDate ? new Date(task.due.parsedDate) : new Date()
@@ -177,21 +178,38 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   const dateAnchorRef = React.useRef(null);
   const datePopRef = React.useRef(null);
 
-  useHotkeys(
-    'esc',
-    (e) => {
-      if (!dateCalOpen) return;
-      e.preventDefault();
-      setDateCalOpen(false);
-    },
-    { enableOnTags: ['*'], keydown: true }
-  );
-
-
   const selectedTaskDate = task?.due?.parsedDate
     ? new Date(task.due.parsedDate)
     : null;
 
+  // --- TIME PICKER (per task) ---
+  const [timeOpen, setTimeOpen] = React.useState(false);
+  const timeAnchorRef = React.useRef(null);
+  const timePopRef = React.useRef(null);
+
+  const taskDueDate = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
+  const selectedHour = taskDueDate?.getHours();
+  const selectedMinute = taskDueDate?.getMinutes();
+
+  useHotkeys(
+    'esc',
+    (e) => {
+      let closed = false;
+      if (dateCalOpen) {
+        setDateCalOpen(false);
+        closed = true;
+      }
+      if (timeOpen) {
+        setTimeOpen(false);
+        closed = true;
+      }
+      if (!closed) return;
+      e.preventDefault();
+    },
+    { enableOnTags: ['*'], keydown: true }
+  );
+
+  // close date calendar on outside click
   React.useEffect(() => {
     if (!dateCalOpen) return;
 
@@ -214,6 +232,55 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", handleOutside);
   }, [dateCalOpen, task?.due?.parsedDate]);
 
+  // close time picker on outside click
+  React.useEffect(() => {
+    if (!timeOpen) return;
+
+    const handleOutside = (e) => {
+      if (
+        !timePopRef.current?.contains(e.target) &&
+        !timeAnchorRef.current?.contains(e.target)
+      ) {
+        setTimeOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutside);
+    return () => document.removeEventListener("pointerdown", handleOutside);
+  }, [timeOpen]);
+
+  // auto-scroll time picker to current task time (or now)
+  React.useEffect(() => {
+    if (!timeOpen) return;
+    const container = timePopRef.current;
+    if (!container) return;
+
+    const base = taskDueDate || new Date();
+    const minutes = base.getHours() * 60 + base.getMinutes();
+    const idx = Math.round(minutes / 30); // 30-min slots, same as input picker
+
+    const options = container.querySelectorAll(".time-option");
+    const targetEl = options[idx];
+    if (!targetEl) return;
+
+    setTimeout(() => {
+      const targetOffset =
+        targetEl.offsetTop - container.clientHeight / 2 + targetEl.clientHeight / 2;
+      const start = container.scrollTop;
+      const diff = targetOffset - start;
+      const duration = 620;
+      const startTime = performance.now();
+
+      const animate = (nowTime) => {
+        const t = Math.min((nowTime - startTime) / duration, 1);
+        const easeOutCubic = 1 - Math.pow(1 - t, 3);
+        container.scrollTop = start + diff * easeOutCubic;
+        if (t < 1) requestAnimationFrame(animate);
+      };
+
+      requestAnimationFrame(animate);
+    }, 120);
+  }, [timeOpen, taskDueDate]);
 
   const [justChecked, setJustChecked] = React.useState(false);
   useEffect(() => { if (!task.completed) setJustChecked(false); }, [task.completed]);
@@ -340,8 +407,82 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       </div>
 
       <div className="task-item-right" style={{ position: "relative" }}>
-        <span className={`task-time ${props.timeClass}`}>{props.time}</span>
+        {/* TIME CHIP + INLINE TIME PICKER */}
+        <div
+          className="task-time-wrapper"
+          ref={timeAnchorRef}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isOverlay) return;
+            setTimeout(() => {
+              setTimeOpen((s) => !s);
+            }, 40);
+          }}
+          style={{ position: "relative" }}
+        >
+          <span className={`task-time ${props.timeClass}`}>{props.time}</span>
 
+          <AnimatePresence>
+            {timeOpen && !isOverlay && (
+              <motion.div
+                key="task-time-popup"
+                ref={timePopRef}
+                className="time-picker-dropdown"
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                transition={{ duration: 0.25, ease: EASE_SOFT }}
+                style={{
+                  position: "absolute",
+                  top: (timeAnchorRef.current?.offsetTop || 0) + 33,
+                  right: 0,
+                  zIndex: 3050,
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {Array.from({ length: 48 }, (_, i) => {
+                  const totalMinutes = i * 30;
+                  const hour24 = Math.floor(totalMinutes / 60);
+                  const minute = totalMinutes % 60;
+
+                  const label = new Date(0, 0, 0, hour24, minute).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  });
+
+                  const isSelected =
+                    taskDueDate &&
+                    selectedHour === hour24 &&
+                    selectedMinute === minute;
+
+                  return (
+                    <div
+                      key={`${hour24}-${minute}`}
+                      className={`time-option ${isSelected ? "selected" : ""}`}
+                      onClick={() => {
+                        const base = taskDueDate || new Date();
+                        const picked = new Date(base);
+                        picked.setHours(hour24, minute, 0, 0);
+
+                        setTimeOpen(false);
+                        setTimeout(() => {
+                          onTimeChange?.(picked);
+                        }, 90);
+                      }}
+                    >
+                      <span>{label}</span>
+                      {isSelected && <CheckMark className="time-check" />}
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* date chip + local calendar */}
         <div
           className={`task-date-wrapper${dateCalOpen ? " calendar-open" : ""}`}
           ref={dateAnchorRef}
@@ -353,8 +494,10 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
             }, 40);
           }}
         >
+          <motion.span className={`task-date ${props.dateClass}`}>
+            {props.date}
+          </motion.span>
 
-          <motion.span className={`task-date ${props.dateClass}`}>{props.date}</motion.span>
           {dueForPopup && !task.completed && (
             <motion.div
               className={`task-date-popup${isLateForPopup ? " late" : ""} ${isNearForPopup ? " near" : ""}`}
@@ -378,7 +521,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                 style={{
                   position: "absolute",
                   top: (dateAnchorRef.current?.offsetTop || 0) + 38,
-                  right: -47,
+                  right: 0,
                   zIndex: 3000,
                   transformOrigin: "top right",
                   willChange: "transform, opacity",
@@ -418,16 +561,13 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                           }
                           onClick={() => {
                             if (isPast) return;
-
                             setDateCalOpen(false);
-
                             if (onDateChange) {
                               setTimeout(() => {
                                 onDateChange(clone);
                               }, 100);
                             }
                           }}
-
                         >
                           {format(day, "d")}
                         </motion.button>
@@ -468,7 +608,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                         >
                           <ArrowRight className="calendar-arrow" />
                         </button>
-
                       </div>
 
                       <motion.div
@@ -488,6 +627,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           </AnimatePresence>
         </div>
 
+        {/* dots menu */}
         <div
           className="task-dots-container"
           ref={menuRef}
@@ -526,16 +666,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                 onClick={(e) => e.stopPropagation()}
               >
                 <motion.div variants={itemsWrap} initial="closed" animate="open" exit="closed">
-                  <motion.button
-                    className="dots-option disabled"
-                    role="menuitem"
-                    variants={menuItem}
-                    whileHover={{ x: 1.5, scale: 1.004 }}
-                    whileTap={{ scale: 0.992 }}
-                  >
-                    <Edit className="dots-option-icon disabled" /> Edit
-                  </motion.button>
-
                   <motion.button
                     className="dots-option"
                     role="menuitem"
@@ -585,6 +715,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
 
 
+
+
 const Tasks = () => {
   usePageTitle("Foxer - Tasks");
   const nav = useNavigate();
@@ -605,6 +737,35 @@ const Tasks = () => {
       );
     }
   };
+
+  const handleTaskTimeChange = (id, fromCompleted, pickedDate) => {
+    const mergeTime = (t) => {
+      const base = t?.due?.parsedDate ? new Date(t.due.parsedDate) : new Date();
+      const d = new Date(base);
+      d.setHours(
+        pickedDate.getHours(),
+        pickedDate.getMinutes(),
+        0,
+        0
+      );
+      return {
+        ...t,
+        due: { ...t.due, parsedDate: d.toISOString() },
+        updatedAt: new Date().toISOString(),
+      };
+    };
+
+    if (fromCompleted) {
+      setCompletedTasks(prev =>
+        prev.map(t => (t.id === id ? mergeTime(t) : t))
+      );
+    } else {
+      setTasks(prev =>
+        prev.map(t => (t.id === id ? mergeTime(t) : t))
+      );
+    }
+  };
+
 
 
   function DroppableContainer({ id, children }) {
@@ -2167,6 +2328,7 @@ const Tasks = () => {
                               onDuplicate={(id) => duplicateTask(id, false)}
                               onTitleCommit={(title) => handleTitleCommit(task.id, title, false)}
                               onDateChange={(newDate) => handleTaskDateChange(task.id, false, newDate)}
+                              onTimeChange={(newDate) => handleTaskTimeChange(task.id, false, newDate)}
                               isDraggingGlobal={isDragging}
                               isDeleting={deletingIds.includes(task.id)}
                               isGroupDragging={isGroupDragging}
@@ -2243,6 +2405,7 @@ const Tasks = () => {
                                     onDuplicate={(id) => duplicateTask(id, true)}
                                     onTitleCommit={(title) => handleTitleCommit(task.id, title, true)}
                                     onDateChange={(newDate) => handleTaskDateChange(task.id, true, newDate)}
+                                    onTimeChange={(newDate) => handleTaskTimeChange(task.id, true, newDate)}
                                     isDraggingGlobal={isDragging}
                                     isDeleting={deletingIds.includes(task.id)}
                                     isGroupDragging={isGroupDragging}
@@ -2251,7 +2414,6 @@ const Tasks = () => {
                                   />
                                 );
                               })}
-
 
 
 
