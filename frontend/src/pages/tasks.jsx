@@ -2036,7 +2036,7 @@ const Tasks = () => {
                 setIsInputFocused(false);
               }, 100);
             }}
-            animate={isInputFocused ? 'focused' : 'idle'}
+            animate={isInputFocused ? "focused" : "idle"}
             transition={{ duration: 0.22, ease: [0.25, 0.8, 0.3, 1] }}
             onChange={(e) => {
               const v = e.target.value;
@@ -2046,30 +2046,34 @@ const Tasks = () => {
               }
               liveParseNatural(v);
             }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                const val = inputRef.current?.value.trim();
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const val = e.currentTarget.value.trim();
                 if (val) {
-                  addTask(val)
-                  setIsInputFocused(false)
-                  inputRef.current?.blur()
-                  setTimePickerOpen(false)
-                  setCalendarOpen(false)
+                  addTask(val);
+                  setIsInputFocused(false);
+                  e.currentTarget.blur();
+                  setTimePickerOpen(false);
+                  setCalendarOpen(false);
                 }
               }
 
-              if (e.key === 'Escape') {
-                const noPopups = !calendarOpen && !timePickerOpen
+              if (e.key === "Escape") {
+                const noPopups = !calendarOpen && !timePickerOpen;
                 if (noPopups) {
-                  inputRef.current?.blur()
-                  setIsInputFocused(false)
+                  e.currentTarget.blur();
+                  setIsInputFocused(false);
                 }
 
-                if (timePickerOpen) setTimePickerOpen(false)
-                if (calendarOpen) setCalendarOpen(false)
+                if (timePickerOpen) setTimePickerOpen(false);
+                if (calendarOpen) setCalendarOpen(false);
               }
             }}
           />
+
 
 
           <div
