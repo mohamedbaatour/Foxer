@@ -2,7 +2,19 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import "./tasks.css";
 import { AnimatePresence, LayoutGroup, MotionConfig, delay, motion } from "framer-motion";
-import { DndContext, useDroppable, DragOverlay, pointerWithin, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  useDroppable,
+  DragOverlay,
+  pointerWithin,
+  PointerSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+
+
 import {
   arrayMove,
   SortableContext,
@@ -1719,12 +1731,19 @@ const Tasks = () => {
     return () => ro.disconnect();
   }, [isInputFocused, selectedTime, selectedDate, timePickerOpen, calendarOpen]);
 
+
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(TouchSensor, {
       activationConstraint: {
-        distance: 8,
+        delay: 1,   // long-press before drag
+        tolerance: 8, // small finger move allowed
       },
     }),
+    // If you REALLY want PointerSensor too, you could still add:
+    // useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   const collisionDetection = useCallback(
