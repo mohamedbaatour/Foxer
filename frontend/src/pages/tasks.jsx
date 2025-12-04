@@ -143,7 +143,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   onDuplicate,
   onTitleCommit,
   onDateChange,
-  onTimeChange,          // 👈 time change handler
+  onTimeChange,
   isOverlay = false,
   isDeleting = false,
   isBaseHidden = false,
@@ -182,7 +182,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     else titleRef.current.innerText = task.title;
   }, [onTitleCommit, task.title]);
 
-  // --- DATE CALENDAR (per task) ---
   const [dateCalOpen, setDateCalOpen] = React.useState(false);
   const [dateMonth, setDateMonth] = React.useState(() =>
     task?.due?.parsedDate ? new Date(task.due.parsedDate) : new Date()
@@ -194,7 +193,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     ? new Date(task.due.parsedDate)
     : null;
 
-  // --- TIME PICKER (per task) ---
   const [timeOpen, setTimeOpen] = React.useState(false);
   const timeAnchorRef = React.useRef(null);
   const timePopRef = React.useRef(null);
@@ -202,6 +200,11 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
   const taskDueDate = task?.due?.parsedDate ? new Date(task.due.parsedDate) : null;
   const selectedHour = taskDueDate?.getHours();
   const selectedMinute = taskDueDate?.getMinutes();
+
+  const nowTime = new Date();
+  const isTodayTask =
+    taskDueDate &&
+    nowTime.toDateString() === taskDueDate.toDateString();
 
   useHotkeys(
     'esc',
@@ -221,7 +224,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     { enableOnTags: ['*'], keydown: true }
   );
 
-  // close date calendar on outside click
   React.useEffect(() => {
     if (!dateCalOpen) return;
 
@@ -244,7 +246,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", handleOutside);
   }, [dateCalOpen, task?.due?.parsedDate]);
 
-  // close time picker on outside click
   React.useEffect(() => {
     if (!timeOpen) return;
 
@@ -261,7 +262,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     return () => document.removeEventListener("pointerdown", handleOutside);
   }, [timeOpen]);
 
-  // auto-scroll time picker to current task time (or now)
   React.useEffect(() => {
     if (!timeOpen) return;
     const container = timePopRef.current;
@@ -269,7 +269,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
 
     const base = taskDueDate || new Date();
     const minutes = base.getHours() * 60 + base.getMinutes();
-    const idx = Math.round(minutes / 30); // 30-min slots, same as input picker
+    const idx = Math.round(minutes / 30);
 
     const options = container.querySelectorAll(".time-option");
     const targetEl = options[idx];
@@ -316,8 +316,8 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       dueForPopup.getDate()
     );
 
-    const d = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24)); // day diff (calendar)
-    const diffMs = dueForPopup.getTime() - nowForPopup.getTime();       // exact time diff
+    const d = Math.round((dueMid - todayMid) / (1000 * 60 * 60 * 24));
+    const diffMs = dueForPopup.getTime() - nowForPopup.getTime();
     const sign = diffMs >= 0 ? 1 : -1;
     const totalMinutes = Math.max(0, Math.round(Math.abs(diffMs) / 60000));
     const hours = Math.floor(totalMinutes / 60);
@@ -329,14 +329,11 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
     } else if (d === 1) {
       daysLeftText = "1 day left";
     } else if (d === 0) {
-      // 🔥 Same calendar day -> show hours/minutes
       if (totalMinutes === 0) {
         daysLeftText = sign >= 0 ? "Due now" : "Just late";
       } else if (hours === 0) {
-        // < 1 hour
         daysLeftText = `${totalMinutes}m ${suffix}`;
       } else {
-        // 1h+ (with zero-padded minutes)
         const mm = minutes.toString().padStart(2, "0");
         daysLeftText =
           minutes > 0
@@ -344,12 +341,10 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
             : `${hours}h ${suffix}`;
       }
     } else {
-      // d < 0 and not same day -> classic "X days late"
       const a = Math.abs(d);
       daysLeftText = `${a} day${a === 1 ? "" : "s"} late`;
     }
 
-    // 🔗 Sync tone with the same chip class
     if (props.dateClass === "task-date-error") {
       popupTone = "late";
     } else if (props.dateClass === "task-date-warning") {
@@ -473,7 +468,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
       </div>
 
       <div className="task-item-right" style={{ position: "relative" }}>
-        {/* TIME CHIP + INLINE TIME PICKER */}
         <div
           className="task-time-wrapper"
           ref={timeAnchorRef}
@@ -523,11 +517,24 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                     selectedHour === hour24 &&
                     selectedMinute === minute;
 
+                  let isPastForToday = false;
+                  if (isTodayTask) {
+                    const candidate = new Date(nowTime);
+                    candidate.setHours(hour24, minute, 0, 0);
+                    isPastForToday = candidate.getTime() < nowTime.getTime();
+                  }
+
                   return (
                     <div
                       key={`${hour24}-${minute}`}
-                      className={`time-option ${isSelected ? "selected" : ""}`}
+                      className={
+                        `time-option` +
+                        (isSelected ? " selected" : "") +
+                        (isPastForToday ? " past" : "")
+                      }
                       onClick={() => {
+                        if (isPastForToday) return;
+
                         const base = taskDueDate || new Date();
                         const picked = new Date(base);
                         picked.setHours(hour24, minute, 0, 0);
@@ -543,6 +550,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                     </div>
                   );
                 })}
+
               </motion.div>
             )}
           </AnimatePresence>
@@ -693,7 +701,6 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
           </AnimatePresence>
         </div>
 
-        {/* dots menu */}
         <div
           className="task-dots-container"
           ref={menuRef}
@@ -896,7 +903,6 @@ const Tasks = () => {
 
   const vibrateLight = () => {
     if (navigator.vibrate) navigator.vibrate(12);
-    // 10–18ms is the natural sweet spot for "gentle tap"
   };
 
 
@@ -905,19 +911,38 @@ const Tasks = () => {
     const nowIso = new Date().toISOString();
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+    const now = dayjs();
     let parsedDateIso = nowIso;
+
     if (selectedDate) {
       let d = dayjs(selectedDate);
+
       if (selectedTime) {
-        d = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+        d = d
+          .hour(selectedTime.hour())
+          .minute(selectedTime.minute())
+          .second(0)
+          .millisecond(0);
       } else {
-        d = d.hour(0).minute(0).second(0).millisecond(0);
+        const future = now.add(1, "hour");
+        d = d
+          .hour(future.hour())
+          .minute(future.minute())
+          .second(0)
+          .millisecond(0);
       }
+
       parsedDateIso = d.toISOString();
     } else if (selectedTime) {
-      const d = dayjs();
-      const combined = d.hour(selectedTime.hour()).minute(selectedTime.minute()).second(0).millisecond(0);
+      const combined = now
+        .hour(selectedTime.hour())
+        .minute(selectedTime.minute())
+        .second(0)
+        .millisecond(0);
       parsedDateIso = combined.toISOString();
+    } else {
+      const future = now.add(1, "hour").second(0).millisecond(0);
+      parsedDateIso = future.toISOString();
     }
 
     const newTask = {
@@ -925,7 +950,10 @@ const Tasks = () => {
       title,
       createdAt: nowIso,
       updatedAt: nowIso,
-      due: { originalInput: selectedTime ? selectedTime.format("HH:mm") : "", parsedDate: parsedDateIso },
+      due: {
+        originalInput: selectedTime ? selectedTime.format("HH:mm") : "",
+        parsedDate: parsedDateIso,
+      },
       completed: false,
       focused: false,
       deleted: false,
@@ -942,6 +970,7 @@ const Tasks = () => {
     setSelectedTime(null);
     setTimePickerOpen(false);
   };
+
 
 
   const duplicateTask = (id, fromCompleted = false) => {
@@ -1596,6 +1625,11 @@ const Tasks = () => {
   const day = now.getDate();
   const dateLabel = `${day} ${month}`;
 
+  const isInputDateToday =
+    selectedDate &&
+    selectedDate.toDateString() === now.toDateString();
+
+
 
   const completedRef = useRef(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -1750,12 +1784,10 @@ const Tasks = () => {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 1,   // long-press before drag
-        tolerance: 8, // small finger move allowed
+        delay: 1,
+        tolerance: 8,
       },
     }),
-    // If you REALLY want PointerSensor too, you could still add:
-    // useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   const collisionDetection = useCallback(
@@ -2187,6 +2219,7 @@ const Tasks = () => {
                             const totalMinutes = i * 30;
                             const hour24 = Math.floor(totalMinutes / 60);
                             const minute = totalMinutes % 60;
+
                             const label = new Date(0, 0, 0, hour24, minute).toLocaleTimeString([], {
                               hour: "numeric",
                               minute: "2-digit",
@@ -2198,12 +2231,30 @@ const Tasks = () => {
                               selectedTime.hour() === hour24 &&
                               selectedTime.minute() === minute;
 
+                            // 🔒 block past times only if input date is today
+                            let isPastForToday = false;
+                            if (isInputDateToday) {
+                              const candidate = new Date(selectedDate);
+                              candidate.setHours(hour24, minute, 0, 0);
+                              isPastForToday = candidate.getTime() < now.getTime();
+                            }
+
                             return (
                               <div
                                 key={`${hour24}-${minute}`}
-                                className={`time-option ${isSelected ? "selected" : ""}`}
+                                className={
+                                  `time-option` +
+                                  (isSelected ? " selected" : "") +
+                                  (isPastForToday ? " past" : "")
+                                }
                                 onClick={() => {
-                                  const newTime = dayjs().hour(hour24).minute(minute).second(0);
+                                  if (isPastForToday) return;
+
+                                  const newTime = dayjs()
+                                    .hour(hour24)
+                                    .minute(minute)
+                                    .second(0);
+
                                   setSelectedTime(newTime);
                                   setManualTimeSet(true);
                                   setTimePickerOpen(false);
@@ -2212,11 +2263,11 @@ const Tasks = () => {
                                 <span>{label}</span>
                                 {isSelected && <CheckMark className="time-check" />}
                               </div>
-
                             );
                           })}
                         </motion.div>
                       )}
+
                     </AnimatePresence>
                   </motion.div>
 

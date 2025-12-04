@@ -386,6 +386,15 @@
   background-color: var(--color-border-2);
 }
 
+.time-option.past {
+  color: var(--color-surface-3);
+}
+
+.time-option.past:hover {
+  cursor: not-allowed;
+  background-color: transparent;
+}
+
 .time-check {
   width: 16px;
   height: 16px;
@@ -857,8 +866,13 @@ margin-top: 0.5px;
   width: 16px;
   height: 16px;
   opacity: 1;
-
+  color: var(--color-text-secondary);
   margin-left: 0;
+  transition: color 0.2s;
+}
+
+.task-dots:hover {
+  color: var(--color-text-primary);
 }
 
 .task-dots-dropdown {
