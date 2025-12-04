@@ -11,6 +11,7 @@
   -moz-user-select: none;
   -ms-user-select: none;
   position: relative;
+  overscroll-behavior-y: none;
 }
 
 .tasks-subcontainer {
@@ -639,11 +640,16 @@
 }
 
 .rCS179bs95 {
-  border: 1px solid var(--color-border-2) !important;
-  background: hsla(0, 0%, 100%, 0.103) !important;
-  border-radius: 8px !important;
-  backdrop-filter: blur(3px);
+  border-radius: 10px !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.25),
+    inset 0 0 0 1px rgba(255,255,255,0.08);
 }
+
 
 .task-item-left {
   display: flex;

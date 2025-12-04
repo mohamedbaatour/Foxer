@@ -894,6 +894,11 @@ const Tasks = () => {
     return () => document.removeEventListener("pointerdown", onDocDown);
   }, [timePickerOpen]);
 
+  const vibrateLight = () => {
+    if (navigator.vibrate) navigator.vibrate(12);
+    // 10–18ms is the natural sweet spot for "gentle tap"
+  };
+
 
 
   const addTask = (title) => {
@@ -927,6 +932,8 @@ const Tasks = () => {
     };
 
     setTasks((prev) => [newTask, ...prev]);
+
+    vibrateLight();
 
     setSelectedDate(new Date());
     setCalendarMonth(new Date());
@@ -1435,9 +1442,12 @@ const Tasks = () => {
 
 
 
-
+  const vibrateSoft = () => navigator.vibrate?.(14);
 
   const handleCheck = (task, fromCompleted) => {
+
+    vibrateSoft();
+
     if (!fromCompleted) {
       setIsCompletedTasksOpen(true);
       const el = document.querySelector(`.check-square[data-id="${task.id}"]`);
@@ -2580,6 +2590,14 @@ const Tasks = () => {
           selectFromInside={false}
           continueSelect={false}
           toggleContinueSelect={["ctrl", "meta"]}
+          onDrag={e => {
+            const box = document.querySelector(".selecto-area");
+            if (box) {
+              box.style.setProperty("--x", e.clientX + "px");
+              box.style.setProperty("--y", e.clientY + "px");
+            }
+          }}
+
 
           hitRate={0}
           ratio={0}
