@@ -450,6 +450,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
         <p
           ref={titleRef}
           className="task-title"
+          tabIndex={-1}
           contentEditable={!isOverlay}
           suppressContentEditableWarning
           onBlur={commitTitle}
@@ -468,6 +469,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
         >
           {task.title}
         </p>
+
       </div>
 
       <div className="task-item-right" style={{ position: "relative" }}>
