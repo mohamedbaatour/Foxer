@@ -854,16 +854,6 @@ const Tasks = () => {
   }
 
 
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    return savedTasks ? JSON.parse(savedTasks) : defaultTasks;
-  });
-
-
-  const [completedTasks, setCompletedTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("completedTasks");
-    return savedTasks ? JSON.parse(savedTasks) : defaultCompletedTasks;
-  });
 
 
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -879,90 +869,7 @@ const Tasks = () => {
   const [importToast, setImportToast] = useState(null);
 
 
-  useEffect(() => {
-    if (!importToast) return;
-    const t = setTimeout(() => setImportToast(null), 3600);
-    return () => clearTimeout(t);
-  }, [importToast]);
 
-  const applyImport = useCallback(
-    (mode) => {
-      if (!pendingImport) return;
-      const { tasks: importedTasks, completedTasks: importedCompleted } = pendingImport;
-
-      if (mode === "replace") {
-        setTasks(importedTasks);
-        setCompletedTasks(importedCompleted);
-        setImportToast({ type: "success", message: "Tasks imported and replaced current." });
-      } else if (mode === "merge") {
-        const ids = new Set([
-          ...tasks.map((t) => t.id),
-          ...completedTasks.map((t) => t.id),
-        ]);
-
-        const ensureUniqueId = (t) => {
-          let id = t.id;
-          while (ids.has(id)) {
-            id = `${id}-${Math.random().toString(36).slice(2, 6)}`;
-          }
-          ids.add(id);
-          return { ...t, id };
-        };
-
-        const mergedTasks = [
-          ...tasks,
-          ...importedTasks.map(ensureUniqueId),
-        ];
-        const mergedCompleted = [
-          ...completedTasks,
-          ...importedCompleted.map(ensureUniqueId),
-        ];
-
-        setTasks(mergedTasks);
-        setCompletedTasks(mergedCompleted);
-        setImportToast({ type: "success", message: "Tasks imported and merged." });
-      }
-
-      setPendingImport(null);
-      setImportDialogOpen(false);
-    },
-    [pendingImport, tasks, completedTasks]
-  );
-
-  const cancelImport = useCallback(() => {
-    setPendingImport(null);
-    setImportDialogOpen(false);
-  }, []);
-
-
-  const exportAllTasks = useCallback(() => {
-    const payload = {
-      version: EXPORT_VERSION,
-      exportedAt: new Date().toISOString(),
-      tasks,
-      completedTasks,
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/json",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = `foxer-tasks-${new Date().toISOString().slice(0, 10)}.json`;
-
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-    setImportToast({
-      type: "success",
-      message: "Tasks downloaded as backup.",
-    });
-  }, [tasks, completedTasks]);
 
 
 
@@ -1196,6 +1103,101 @@ const Tasks = () => {
   ];
 
 
+  const [tasks, setTasks] = useState(() => {
+    const savedTasks = localStorage.getItem("tasks");
+    return savedTasks ? JSON.parse(savedTasks) : defaultTasks;
+  });
+
+
+  const [completedTasks, setCompletedTasks] = useState(() => {
+    const savedTasks = localStorage.getItem("completedTasks");
+    return savedTasks ? JSON.parse(savedTasks) : defaultCompletedTasks;
+  });
+
+  useEffect(() => {
+    if (!importToast) return;
+    const t = setTimeout(() => setImportToast(null), 3600);
+    return () => clearTimeout(t);
+  }, [importToast]);
+
+  const applyImport = useCallback(
+    (mode) => {
+      if (!pendingImport) return;
+      const { tasks: importedTasks, completedTasks: importedCompleted } = pendingImport;
+
+      if (mode === "replace") {
+        setTasks(importedTasks);
+        setCompletedTasks(importedCompleted);
+        setImportToast({ type: "success", message: "Tasks imported and replaced current." });
+      } else if (mode === "merge") {
+        const ids = new Set([
+          ...tasks.map((t) => t.id),
+          ...completedTasks.map((t) => t.id),
+        ]);
+
+        const ensureUniqueId = (t) => {
+          let id = t.id;
+          while (ids.has(id)) {
+            id = `${id}-${Math.random().toString(36).slice(2, 6)}`;
+          }
+          ids.add(id);
+          return { ...t, id };
+        };
+
+        const mergedTasks = [
+          ...tasks,
+          ...importedTasks.map(ensureUniqueId),
+        ];
+        const mergedCompleted = [
+          ...completedTasks,
+          ...importedCompleted.map(ensureUniqueId),
+        ];
+
+        setTasks(mergedTasks);
+        setCompletedTasks(mergedCompleted);
+        setImportToast({ type: "success", message: "Tasks imported and merged." });
+      }
+
+      setPendingImport(null);
+      setImportDialogOpen(false);
+    },
+    [pendingImport, tasks, completedTasks]
+  );
+
+  const cancelImport = useCallback(() => {
+    setPendingImport(null);
+    setImportDialogOpen(false);
+  }, []);
+
+
+  const exportAllTasks = useCallback(() => {
+    const payload = {
+      version: EXPORT_VERSION,
+      exportedAt: new Date().toISOString(),
+      tasks,
+      completedTasks,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `foxer-tasks-${new Date().toISOString().slice(0, 10)}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    setImportToast({
+      type: "success",
+      message: "Tasks downloaded as backup.",
+    });
+  }, [tasks, completedTasks]);
 
 
 
