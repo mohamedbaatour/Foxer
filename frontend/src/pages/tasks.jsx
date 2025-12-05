@@ -755,7 +755,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                   </motion.button>
 
                   <motion.button
-                    className="dots-option"
+                    className="dots-option delete"
                     role="menuitem"
                     variants={menuItem}
                     whileHover={{ x: 1.5, scale: 1.004 }}
@@ -769,7 +769,7 @@ const SortableTaskItem = React.memo(function SortableTaskItem({
                       }, 50);
                     }}
                   >
-                    <Delete className="dots-option-icon" /> Delete
+                    <Delete className="dots-option-icon delete" /> Delete
                   </motion.button>
                 </motion.div>
               </motion.div>
@@ -854,11 +854,118 @@ const Tasks = () => {
   }
 
 
+  const [tasks, setTasks] = useState(() => {
+    const savedTasks = localStorage.getItem("tasks");
+    return savedTasks ? JSON.parse(savedTasks) : defaultTasks;
+  });
+
+
+  const [completedTasks, setCompletedTasks] = useState(() => {
+    const savedTasks = localStorage.getItem("completedTasks");
+    return savedTasks ? JSON.parse(savedTasks) : defaultCompletedTasks;
+  });
+
 
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const isInteractingWithControls = useRef(false);
+
+  const fileInputRef = useRef(null);
+
+  const [pendingImport, setPendingImport] = useState(null); // { tasks, completedTasks }
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  const [importToast, setImportToast] = useState(null);
+
+
+  useEffect(() => {
+    if (!importToast) return;
+    const t = setTimeout(() => setImportToast(null), 3600);
+    return () => clearTimeout(t);
+  }, [importToast]);
+
+  const applyImport = useCallback(
+    (mode) => {
+      if (!pendingImport) return;
+      const { tasks: importedTasks, completedTasks: importedCompleted } = pendingImport;
+
+      if (mode === "replace") {
+        setTasks(importedTasks);
+        setCompletedTasks(importedCompleted);
+        setImportToast({ type: "success", message: "Tasks imported and replaced current." });
+      } else if (mode === "merge") {
+        const ids = new Set([
+          ...tasks.map((t) => t.id),
+          ...completedTasks.map((t) => t.id),
+        ]);
+
+        const ensureUniqueId = (t) => {
+          let id = t.id;
+          while (ids.has(id)) {
+            id = `${id}-${Math.random().toString(36).slice(2, 6)}`;
+          }
+          ids.add(id);
+          return { ...t, id };
+        };
+
+        const mergedTasks = [
+          ...tasks,
+          ...importedTasks.map(ensureUniqueId),
+        ];
+        const mergedCompleted = [
+          ...completedTasks,
+          ...importedCompleted.map(ensureUniqueId),
+        ];
+
+        setTasks(mergedTasks);
+        setCompletedTasks(mergedCompleted);
+        setImportToast({ type: "success", message: "Tasks imported and merged." });
+      }
+
+      setPendingImport(null);
+      setImportDialogOpen(false);
+    },
+    [pendingImport, tasks, completedTasks]
+  );
+
+  const cancelImport = useCallback(() => {
+    setPendingImport(null);
+    setImportDialogOpen(false);
+  }, []);
+
+
+  const exportAllTasks = useCallback(() => {
+    const payload = {
+      version: EXPORT_VERSION,
+      exportedAt: new Date().toISOString(),
+      tasks,
+      completedTasks,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = `foxer-tasks-${new Date().toISOString().slice(0, 10)}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    setImportToast({
+      type: "success",
+      message: "Tasks downloaded as backup.",
+    });
+  }, [tasks, completedTasks]);
+
+
+
 
   useEffect(() => {
     if (!isInputFocused) return;
@@ -1089,15 +1196,97 @@ const Tasks = () => {
   ];
 
 
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    return savedTasks ? JSON.parse(savedTasks) : defaultTasks;
-  });
 
-  const [completedTasks, setCompletedTasks] = useState(() => {
-    const savedTasks = localStorage.getItem("completedTasks");
-    return savedTasks ? JSON.parse(savedTasks) : defaultCompletedTasks;
-  });
+
+
+  const EXPORT_VERSION = 1;
+
+  const handleImportFile = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = (evt) => {
+        try {
+          const text = evt.target?.result;
+          const json = JSON.parse(text);
+
+          if (!json || typeof json !== "object") {
+            throw new Error("Invalid JSON");
+          }
+
+          const {
+            version,
+            tasks: importedTasks,
+            completedTasks: importedCompleted,
+          } = json;
+
+          if (
+            version !== EXPORT_VERSION ||
+            !Array.isArray(importedTasks) ||
+            !Array.isArray(importedCompleted)
+          ) {
+            throw new Error("Not a valid Foxer export file");
+          }
+
+          const nowIso = new Date().toISOString();
+
+          const normalize = (arr, completedFlag) =>
+            arr
+              .filter((t) => t && typeof t === "object" && t.title)
+              .map((t) => ({
+                id:
+                  typeof t.id === "string" && t.id.trim()
+                    ? t.id
+                    : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                title: String(t.title),
+                createdAt: t.createdAt || nowIso,
+                updatedAt: nowIso,
+                completed:
+                  typeof t.completed === "boolean" ? t.completed : completedFlag,
+                deleted: false,
+                due:
+                  t.due && t.due.parsedDate
+                    ? {
+                      originalInput: t.due.originalInput || "",
+                      parsedDate: t.due.parsedDate,
+                    }
+                    : {
+                      originalInput: "",
+                      parsedDate: nowIso,
+                    },
+              }));
+
+          const normalizedTasks = normalize(importedTasks, false);
+          const normalizedCompleted = normalize(importedCompleted, true);
+
+          // 🔵 Open custom modal instead of window.confirm / alert
+          setPendingImport({
+            tasks: normalizedTasks,
+            completedTasks: normalizedCompleted,
+          });
+          setImportDialogOpen(true);
+        } catch (err) {
+          console.error(err);
+          setImportToast({
+            type: "error",
+            message:
+              "Could not import tasks. Make sure this is a valid Foxer export file.",
+          });
+        } finally {
+          e.target.value = "";
+        }
+      };
+
+      reader.readAsText(file);
+    },
+    []
+  );
+
+
+
 
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -1183,7 +1372,7 @@ const Tasks = () => {
     if (!element) return;
     const rect = element.getBoundingClientRect();
     confetti({
-      particleCount: 15,
+      particleCount: 20,
       spread: 20,
       startVelocity: 9,
       ticks: 90,
@@ -1976,24 +2165,27 @@ const Tasks = () => {
                     <div className="dropdown-section-title">Tasks</div>
 
                     <motion.button
-                      className="dots-option header tasks disabled"
+                      className="dots-option header tasks"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
+                      onClick={exportAllTasks}
                     >
-                      <DownloadTasks className="dots-option-icon header disabled" /> Download tasks
+                      <DownloadTasks className="dots-option-icon header" /> Download tasks
                     </motion.button>
 
                     <motion.button
-                      className="dots-option header tasks disabled"
+                      className="dots-option header tasks"
                       role="menuitem"
                       variants={menuItem}
                       whileHover={{ x: 1.5, scale: 1.004 }}
                       whileTap={{ scale: 0.992 }}
+                      onClick={() => fileInputRef.current?.click()}
                     >
-                      <ImportTasks className="dots-option-icon header disabled" /> Import tasks
+                      <ImportTasks className="dots-option-icon header" /> Import tasks
                     </motion.button>
+
 
                     <div className="dropdown-divider"></div>
 
@@ -2678,6 +2870,87 @@ const Tasks = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {importDialogOpen && pendingImport && (
+          <motion.div
+            className="import-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: EASE_SOFT }}
+            onClick={cancelImport}
+          >
+            <motion.div
+              className="import-modal"
+              initial={{ opacity: 0, y: 20, scale: 0.96, filter: "blur(16px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 10, scale: 0.96, filter: "blur(16px)" }}
+              transition={{ duration: 0.35, ease: EASE_SOFT }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="import-modal-header">
+                <p className="import-modal-title">Import tasks</p>
+                <p className="import-modal-subtitle">How do you want to apply the imported tasks?</p>
+              </div>
+
+              <div className="import-modal-summary">
+                <span>{pendingImport.tasks.length} active</span>
+                <span>·</span>
+                <span>{pendingImport.completedTasks.length} completed</span>
+              </div>
+
+              <div className="import-modal-actions">
+                <button
+                  type="button"
+                  className="import-btn ghost"
+                  onClick={cancelImport}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="import-btn secondary"
+                  onClick={() => applyImport("merge")}
+                >
+                  Merge with current
+                </button>
+                <button
+                  type="button"
+                  className="import-btn primary"
+                  onClick={() => applyImport("replace")}
+                >
+                  Replace current
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {importToast && (
+          <motion.div
+            className={`import-toast ${importToast.type}`}
+            initial={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(8px)" }}
+            transition={{ duration: 0.3, ease: EASE_SOFT }}
+          >
+            {importToast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        style={{ display: "none" }}
+        onChange={handleImportFile}
+      />
+
 
 
     </div >

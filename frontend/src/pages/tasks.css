@@ -179,6 +179,9 @@
   color: var(--color-text-muted);
 }
 
+/* .dots-option.header.tasks.delete {
+color: var(--color-error);
+} */
 
 .dots-option.header.twitter:hover {
 
@@ -713,7 +716,7 @@ margin-top: 0.5px;
 .check-icon {
   width: 14px;
   height: 14px;
-  color: var(--color-bg);
+  color: var(--bg-grad);
   stroke-width: 2;
   stroke-dasharray: 22;
   stroke-dashoffset: 22;
@@ -913,9 +916,17 @@ margin-top: 0.5px;
 }
 
 .dots-option.disabled {
-  background: var(--color-surface-2);
+  background: transparent;
   color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+.dots-option.delete {
+  color: var(--color-error);
+}
+
+.dots-option-icon.delete {
+  color: var(--color-error);
 }
 
 
@@ -1094,6 +1105,118 @@ margin-top: 0.5px;
   color: var(--color-text-muted);
   margin: 0;
 }
+
+
+
+.import-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 12, 16, 0.55);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+}
+
+.import-modal {
+  background-color: var(--color-surface-2);
+  border-radius: 18px;
+  padding: 24px 24px 20px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--color-border-2);
+}
+
+.import-modal-title {
+  font-size: 16px;
+  font-weight: 550;
+  margin-bottom: 4px;
+}
+
+.import-modal-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+
+
+.import-modal-summary {
+  margin: 24px 0 16px 0;
+  font-size: 12px;
+  opacity: 0.8;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.import-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.import-btn {
+  font-size: 13px;
+  border-radius: 6px;
+  padding: 6px 12px;
+  border: none;
+  font-weight: 550;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.12s ease, opacity 0.12s ease, background 0.12s ease;
+  font-family: "switzer", sans-serif;
+}
+
+.import-btn.ghost {
+  color: var(--color-text-primary);
+  background: transparent;
+}
+
+.import-btn.ghost:hover {
+  background: var(--color-surface-3);
+}
+
+.import-btn.secondary {
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+}
+
+.import-btn.secondary:hover {
+  background: var(--color-border-2);
+}
+
+.import-btn.primary {
+  background: var(--color-text-primary);
+  color: var(--bg-grad);
+}
+
+
+
+.import-toast {
+  position: fixed;
+  bottom: 18px;
+  left: 18px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-2);
+  z-index: 4100;
+}
+
+
+
+.import-toast.error {
+  color: var(--color-error);
+}
+
+
+
+
 
 @media (max-width: 640px) {
   .tasks-container {
