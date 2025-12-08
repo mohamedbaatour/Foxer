@@ -19,14 +19,14 @@
     "selecto": "^1.26.3",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build:raw": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
-    "build-sw": "node workbox-build.js",
-    "build": "npm run build:raw && npm run build-sw",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
+"scripts": {
+  "start": "react-scripts start",
+  "build:raw": "cross-env DISABLE_ESLINT_PLUGIN=true react-scripts build",
+  "build-sw": "node workbox-build.js",
+  "build": "npm run build:raw && npm run build-sw",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -46,6 +46,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "workbox-build": "^7.4.0"
   }
 }
