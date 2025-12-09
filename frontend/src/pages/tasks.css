@@ -140,7 +140,7 @@
 }
 
 .header-dots svg {
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   width: 20px;
 }
 
@@ -322,6 +322,155 @@ color: var(--color-error);
   justify-content: center;
   flex-direction: column;
 }
+
+
+.voice-chip.voice-idle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background-color: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  gap: 8px;
+  margin: 23px 8px 0 0;
+  color: var(--color-text-primary);
+
+  cursor: pointer;
+  z-index: 1500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.voice-chip.voice-recording {
+    display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background-color: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  gap: 8px;
+  margin: 23px 8px 0 0;
+  color: var(--color-text-primary);
+
+  cursor: pointer;
+  z-index: 1500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.voice-chip.voice-processing {
+      display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background-color: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  gap: 8px;
+  margin: 23px 8px 0 0;
+  color: var(--color-text-primary);
+
+  cursor: pointer;
+  z-index: 1500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.voice-chip.voice-error {
+      display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background-color: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  gap: 8px;
+  margin: 23px 8px 0 0;
+  color: var(--color-text-primary);
+
+  cursor: pointer;
+  z-index: 1500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.voice-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+  /* helps separate from mic icon */
+  margin-left: 2px;
+}
+
+.voice-bar {
+  width: 2px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-text-primary);
+  transform-origin: center;
+  transform: scaleY(0.4);
+  transition: transform 0.08s ease-out;
+}
+
+.voice-status {
+  font-size: 13px;
+  font-weight: 550;
+  font-family: 'switzer', sans-serif;
+
+}
+
+.voice-chip.voice-idle .mic-ico {
+  color: var(--color-text-primary);
+  width: 16px;
+  height: 16px;
+}
+
+.voice-chip.voice-idle.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.voice-spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--color-text-primary);
+  animation: voice-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voice-chip.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.voice-chip.unavailable .voice-bars,
+.voice-chip.unavailable .voice-spinner {
+  opacity: 0.4;
+}
+
+.voice-chip.unavailable .mic-ico {
+  opacity: 0.4;
+}
+
 
 .task-date-chip {
   display: flex;

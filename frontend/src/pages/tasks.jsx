@@ -53,6 +53,8 @@ import { ReactComponent as PrivacyPolicy } from "../icons/terms-of-use.svg";
 import { ReactComponent as Twitter } from "../icons/twitter.svg";
 import { ReactComponent as Changelog } from "../icons/changelog.svg";
 import { ReactComponent as Logo } from "../icons/logo.svg";
+import { ReactComponent as Mic } from "../icons/mic.svg";
+import { ReactComponent as Settings } from "../icons/settings.svg";
 
 
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -869,8 +871,28 @@ const Tasks = () => {
   const [importToast, setImportToast] = useState(null);
 
 
+  const [voiceState, setVoiceState] = useState("idle"); // idle | recording | processing | error
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const volumeLoopRef = useRef(null);
+  const voiceBarsRef = useRef(null);
+  const maxVoiceLevelRef = useRef(0);
 
 
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+
+  useEffect(() => {
+    const updateOnline = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
 
 
 
@@ -878,15 +900,18 @@ const Tasks = () => {
     if (!isInputFocused) return;
 
     const onDocPointerDown = (e) => {
-      if (inputRef.current && inputRef.current.contains(e.target)) return;
-      if (containerRef.current && containerRef.current.contains(e.target)) return;
+      if (inputRef.current?.contains(e.target)) return;
+      if (containerRef.current?.contains(e.target)) return;
 
-      setIsInputFocused(false);
+      // run AFTER the pointer sequence finishes
+      setTimeout(() => setIsInputFocused(false), 0);
     };
 
     document.addEventListener("pointerdown", onDocPointerDown);
     return () => document.removeEventListener("pointerdown", onDocPointerDown);
   }, [isInputFocused]);
+
+
 
   useEffect(() => {
     if (!isInputFocused) {
@@ -2036,6 +2061,178 @@ const Tasks = () => {
   };
 
 
+
+  const transcribeWithGroq = async blob => {
+    try {
+      // Convert Blob → base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8 = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+      const base64 = btoa(binary);
+
+      const res = await fetch("http://localhost:4000/api/transcribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audio: base64,
+          mimeType: blob.type,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Backend error ${res.status}`);
+      const data = await res.json();
+      return (data.text || "").trim();
+    } catch (err) {
+      console.error("Transcription failed:", err);
+      setVoiceState("error");
+      return "";
+    }
+  };
+
+
+  const cleanupVoiceResources = () => {
+    if (volumeLoopRef.current) {
+      cancelAnimationFrame(volumeLoopRef.current);
+      volumeLoopRef.current = null;
+    }
+
+    // reset bar transforms
+    if (voiceBarsRef.current) {
+      Array.from(voiceBarsRef.current.children).forEach(bar => {
+        bar.style.transform = "scaleY(0.4)";
+      });
+    }
+
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+    }
+  };
+
+
+  const stopRecording = () => {
+    const rec = mediaRecorderRef.current;
+    if (rec && rec.state !== "inactive") {
+      rec.stop();
+      setVoiceState("processing");
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        console.error("getUserMedia not supported");
+        setVoiceState("error");
+        return;
+      }
+
+      maxVoiceLevelRef.current = 0; // reset per recording
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // AudioContext + analyser for reactive waves
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      audioCtxRef.current = audioCtx;
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const loop = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteTimeDomainData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const v = (dataArray[i] - 128) / 128; // -1..1
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / dataArray.length); // 0..~1
+        const level = Math.min(1, rms * 4); // boost a bit
+
+        maxVoiceLevelRef.current = Math.max(maxVoiceLevelRef.current, level);
+
+        // 🔵 Directly update bar transforms, no React state
+        const barsRoot = voiceBarsRef.current;
+        if (barsRoot) {
+          const bars = barsRoot.children;
+          for (let i = 0; i < bars.length; i++) {
+            const factor = 0.4 + level * (1.2 + i * 0.15);
+            bars[i].style.transform = `scaleY(${factor})`;
+          }
+        }
+
+        volumeLoopRef.current = requestAnimationFrame(loop);
+      };
+      loop();
+
+
+
+      const rec = new MediaRecorder(stream);
+      mediaRecorderRef.current = rec;
+      audioChunksRef.current = [];
+
+      rec.ondataavailable = e => {
+        if (e.data?.size) audioChunksRef.current.push(e.data);
+      };
+
+      rec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        cleanupVoiceResources();
+
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        audioChunksRef.current = [];
+
+        const MIN_LEVEL = 0.08;  // threshold
+        const MIN_SIZE = 2000;   // bytes
+
+        if (maxVoiceLevelRef.current < MIN_LEVEL || blob.size < MIN_SIZE) {
+          setVoiceState("idle");
+          return;
+        }
+
+        setVoiceState("processing");
+        const text = await transcribeWithGroq(blob);
+        setVoiceState("idle");
+
+        if (!text || !inputRef.current) return;
+
+        const prev = inputRef.current.value || "";
+        const next = prev ? `${prev.trimEnd()} ${text}` : text;
+        inputRef.current.value = next;
+        liveParseNatural(next);
+        setIsInputFocused(true);
+        inputRef.current.focus();
+      };
+
+
+
+      rec.start();
+      setVoiceState("recording");
+    } catch (err) {
+      console.error("Mic start failed:", err);
+      cleanupVoiceResources();
+      setVoiceState("error");
+    }
+  };
+
+  const handleVoiceClick = () => {
+    if (voiceState === "recording") {
+      stopRecording();
+    } else if (voiceState === "idle" || voiceState === "error") {
+      setIsInputFocused(true);
+      inputRef.current?.focus();
+      startRecording();
+    }
+  };
+
+  const isVoiceDisabled = !isOnline;
+
   return (
     <div className="tasks-container">
       <div className="tasks-subcontainer">
@@ -2085,7 +2282,7 @@ const Tasks = () => {
             }}
           >
             <span className="header-dots" role="button" tabIndex={0} aria-label="Header actions">
-              <Dots />
+              <Settings />
             </span>
 
             <AnimatePresence initial={false} mode="wait">
@@ -2292,8 +2489,8 @@ const Tasks = () => {
                 const val = e.currentTarget.value.trim();
                 if (val) {
                   addTask(val);
-                  setIsInputFocused(false);
-                  e.currentTarget.blur();
+                  // setIsInputFocused(false);
+                  // e.currentTarget.blur();
                   setTimePickerOpen(false);
                   setCalendarOpen(false);
                 }
@@ -2346,6 +2543,51 @@ const Tasks = () => {
 
               ) : (
                 <div className="task-center">
+
+                  <motion.button
+                    type="button"
+                    key="voice"
+                    layout
+                    className={`task-date-chip voice-chip voice-${voiceState}${isVoiceDisabled ? " unavailable" : ""}`}
+                    initial={{ opacity: 0, y: 6, x: 4 }}
+                    animate={{ opacity: 1, y: 0, x: 0 }}
+                    exit={{ opacity: 0, y: -6, x: 4 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 36, mass: 0.7 }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (isVoiceDisabled) return;
+                      handleVoiceClick();
+                    }}
+                    onPointerDownCapture={e => e.stopPropagation()}
+                    aria-pressed={voiceState === "recording"}
+                    aria-label={isVoiceDisabled ? "Voice input unavailable offline" : "Add task by voice"}
+                    disabled={isVoiceDisabled}
+                  >
+                    <motion.div
+                      className="clock-ico-container"
+                      initial={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
+                      animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
+                      transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
+                    >
+                      <Mic className={`chip-ico mic-ico ${isVoiceDisabled ? "unavailable" : ""}`} />
+                    </motion.div>
+
+                    {voiceState === "recording" && (
+                      <div className="voice-bars" aria-hidden="true" ref={voiceBarsRef}>
+                        {[0, 1, 2, 3, 4].map(i => (
+                          <span key={i} className="voice-bar" />
+                        ))}
+                      </div>
+                    )}
+
+
+                    {voiceState === "processing" && (
+                      <div className="voice-spinner" aria-hidden="true" />
+                    )}
+                  </motion.button>
+
+
                   <motion.div
                     layout
                     key="clock"
@@ -2368,9 +2610,9 @@ const Tasks = () => {
                   >
                     <motion.div
                       className="clock-ico-container"
-                      initial={{ opacity: 0, x: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: 8, scale: 0.96 }}
+                      initial={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
+                      animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
                       transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Clock className="chip-ico clock-ico" />
@@ -2425,7 +2667,6 @@ const Tasks = () => {
                               selectedTime.hour() === hour24 &&
                               selectedTime.minute() === minute;
 
-                            // 🔒 block past times only if input date is today
                             let isPastForToday = false;
                             if (isInputDateToday) {
                               const candidate = new Date(selectedDate);
@@ -2486,9 +2727,9 @@ const Tasks = () => {
                     aria-haspopup="dialog"
                   >
                     <motion.div
-                      initial={{ opacity: 0, x: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: 8, scale: 0.96 }}
+                      initial={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
+                      animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, x: 8, scale: 0.96, filter: "blur(2px)" }}
                       transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Calendar className="chip-ico calendar-ico" />
