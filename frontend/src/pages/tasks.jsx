@@ -2062,16 +2062,20 @@ const Tasks = () => {
 
 
 
+  const BACKEND_URL =
+    window.location.hostname === "localhost"
+      ? "http://localhost:4000"
+      : "https://foxer-2cxx.onrender.com";
+
   const transcribeWithGroq = async blob => {
     try {
-      // Convert Blob → base64
       const arrayBuffer = await blob.arrayBuffer();
       const uint8 = new Uint8Array(arrayBuffer);
       let binary = "";
       for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
       const base64 = btoa(binary);
 
-      const res = await fetch("http://localhost:4000/api/transcribe", {
+      const res = await fetch(`${BACKEND_URL}/api/transcribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2089,6 +2093,7 @@ const Tasks = () => {
       return "";
     }
   };
+
 
 
   const cleanupVoiceResources = () => {
