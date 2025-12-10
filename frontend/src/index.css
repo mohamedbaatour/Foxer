@@ -221,8 +221,8 @@ body[data-mood]::after {
 }
 
 ::selection {
-  background-color: var(--color-text-secondary);
-  color: var(--color-bg);
+  background-color: #555fbb;
+  color: #fff;
 }
 
 p {

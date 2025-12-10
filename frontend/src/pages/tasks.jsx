@@ -2286,6 +2286,8 @@ const Tasks = () => {
               }, 35);
             }}
           >
+
+
             <span className="header-dots" role="button" tabIndex={0} aria-label="Header actions">
               <Settings />
             </span>
@@ -2576,7 +2578,9 @@ const Tasks = () => {
                       transition={{ delay: 0.15, duration: 0.2, ease: [0.25, 0.8, 0.3, 1] }}
                     >
                       <Mic className={`chip-ico mic-ico ${isVoiceDisabled ? "unavailable" : ""}`} />
+
                     </motion.div>
+
 
                     {voiceState === "recording" && (
                       <div className="voice-bars" aria-hidden="true" ref={voiceBarsRef}>
@@ -3180,9 +3184,9 @@ const Tasks = () => {
         {importToast && (
           <motion.div
             className={`import-toast ${importToast.type}`}
-            initial={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(8px)" }}
+            initial={{ opacity: 0, y: -14, scale: 0.98, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(8px)" }}
+            exit={{ opacity: 0, y: -14, scale: 0.98, filter: "blur(8px)" }}
             transition={{ duration: 0.3, ease: EASE_SOFT }}
           >
             {importToast.message}

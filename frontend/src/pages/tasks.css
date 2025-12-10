@@ -472,6 +472,9 @@ color: var(--color-error);
 }
 
 
+
+
+
 .task-date-chip {
   display: flex;
   align-items: center;
@@ -761,7 +764,7 @@ color: var(--color-error);
 }
 
 .task-item {
-  max-height: 54px;
+  /* max-height: 54px; */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -776,9 +779,6 @@ color: var(--color-error);
   box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.025);
 }
 
-.task-item:hover {
-  max-height: 600px;
-}
 
 /* .task-item:hover {
   background-color: var(--color-surface-2);
@@ -896,7 +896,7 @@ margin-top: 0.5px;
   max-width: 350px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  /* white-space: nowrap; */
 
   padding: 0 4px;
 
@@ -932,14 +932,14 @@ margin-top: 0.5px;
 }
 
 
-
+/* 
 .task-item:hover .task-title {
   max-width: none;
   overflow: visible;
   white-space: normal;
   word-wrap: break-word;
   text-overflow: clip;
-}
+} */
 
 .task-item-right {
   display: flex;
@@ -1034,8 +1034,8 @@ margin-top: 0.5px;
   min-width: 132px;
   background: var(--color-surface-2);
   border: 0.5px solid var(--color-border);
-  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.247),
-    0 4px 10px rgba(2, 8, 23, 0.651);
+  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.1),
+    0 4px 10px rgba(2, 8, 23, 0.1);
   border-radius: 10px;
   padding: 6px;
   z-index: 99999;
@@ -1164,7 +1164,7 @@ margin-top: 0.5px;
 .completed-tasks-list {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: center;  
   align-items: center;
   width: 100%;
   margin-top: 24px;
@@ -1178,6 +1178,12 @@ margin-top: 0.5px;
   min-width: max-content;
   cursor: pointer;
   margin: 0 12px;
+  transition: color 0.2s;
+}
+
+.completed-tasks-title:hover {
+  cursor: pointer;
+  color: var(--color-text-primary);
 }
 
 .completed-tasks-header {
@@ -1347,8 +1353,7 @@ margin-top: 0.5px;
 
 .import-toast {
   position: fixed;
-  bottom: 18px;
-  left: 18px;
+  top: 18px;
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 13px;
@@ -1462,5 +1467,9 @@ margin-top: 0.5px;
   .task-title {
     max-width: 70px;
   }
+
+.task-date {
+      padding: 2px 5.5px;
+}
 
 }
