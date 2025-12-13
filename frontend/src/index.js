@@ -1,38 +1,43 @@
-// index.js
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
 
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      console.log("SW registered:", reg.scope);
 
-// ✅ Service worker registration with auto-reload
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then(reg => {
-        console.log('SW registered:', reg.scope);
+      const hasController = !!navigator.serviceWorker.controller;
 
-        let refreshing = false;
+      // If an update is already waiting, activate it (only if this is an update)
+      if (reg.waiting && hasController) reg.waiting.postMessage({ type: "SKIP_WAITING" });
 
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
-          // New SW took control → reload once
-          window.location.reload();
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (!sw) return;
+
+        sw.addEventListener("statechange", () => {
+          if (sw.state === "installed" && reg.waiting && hasController) {
+            reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
         });
-      })
-      .catch(err => {
-        console.error('SW registration failed', err);
       });
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    } catch (err) {
+      console.error("SW registration failed", err);
+    }
   });
 }
 
