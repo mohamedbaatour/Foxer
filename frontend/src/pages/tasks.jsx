@@ -132,7 +132,7 @@ const menuItem = {
     x: 4,
     scale: 0.98,
     filter: "blur(4px)",
-    transition: { duration: 0.18, ease: EASE_SOFT }
+    transition: { duration: 0.14, ease: EASE_SOFT }
   }
 };
 
@@ -2236,7 +2236,29 @@ const Tasks = () => {
     }
   };
 
+  const formatDate = () => {
+    const d = new Date()
+    return `${d.toLocaleString("en-US", { month: "short" })} ${d.getDate()} · ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
+  }
+
+  const InfoTime = () => {
+    const [time, setTime] = useState(formatDate())
+
+    useEffect(() => {
+      const update = () => setTime(formatDate())
+
+      update() // sync immediately
+      const id = setInterval(update, 60_000)
+
+      return () => clearInterval(id)
+    }, [])
+
+    return time
+  }
+
   const isVoiceDisabled = !isOnline;
+
+
 
   return (
     <div className="tasks-container">
@@ -2253,6 +2275,16 @@ const Tasks = () => {
               {getIcon()}
               <p className="title">{getGreeting()}</p>
             </motion.div>
+            {/* <motion.p
+              initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+              transition={{ duration: 0.4, delay: 0.7 }}
+              className="information"
+            >
+              {InfoTime()}
+
+            </motion.p> */}
             <motion.p
               initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -2260,8 +2292,9 @@ const Tasks = () => {
               transition={{ duration: 0.4, delay: 0.7 }}
               className="information"
             >
-              It's {new Date().toLocaleString("en-US", { month: "short" })}{" "}
-              {new Date().getDate()}. You have {tasks.length} remaining tasks,{" "}
+              {/* It's {new Date().toLocaleString("en-US", { month: "short" })}{" "} */}
+              {/* {new Date().getDate()}. */}
+              You have {tasks.length} remaining tasks,{" "}
               <span className={todaysCount > 0 ? "today-count active" : "today-count"}>
                 {todaysCount} today
               </span>
@@ -2439,6 +2472,12 @@ const Tasks = () => {
                     </motion.button>
 
                   </motion.div>
+                  <div className="dropdown-divider"></div>
+                  <motion.p
+                    role="menuitem"
+                    variants={menuItem}
+                    className="header-version"
+                  >© 2025 Foxer · v2.0 beta</motion.p>
                 </motion.div>
               )}
             </AnimatePresence>

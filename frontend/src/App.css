@@ -10,18 +10,18 @@
   padding: 0 16px;
 }
 
- .version {
+ .current-time {
   position: fixed;
   right: 32px;
   bottom: 24px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 500;
   color: var(--color-text-secondary);
   z-index: 9999999;
 }
 
 @media (max-width: 768px) {
-  .version {
+  .current-time {
     display: none;
   }
 }

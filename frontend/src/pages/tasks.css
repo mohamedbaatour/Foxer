@@ -151,8 +151,8 @@
   width: 260px;
   background: var(--color-surface-2);
   border: 0.5px solid var(--color-border);
-  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.247),
-    0 4px 10px rgba(2, 8, 23, 0.651);
+  box-shadow: 0 12px 30px rgba(2, 8, 23, 0.1),
+    0 4px 10px rgba(2, 8, 23, 0.1);
   border-radius: 12px;
   padding: 14px;
   z-index: 99999;
@@ -200,6 +200,13 @@ color: var(--color-error);
   color: #1d9bf0;
 }
 
+.header-version {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-left: 4px;
+  margin-top: 8px;
+}
 
 .dropdown-section-title {
   font-size: 12px;
@@ -325,7 +332,7 @@ color: var(--color-error);
 
 
 .voice-chip.voice-idle {
-  display: flex;
+  /* display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: row;
@@ -335,13 +342,13 @@ color: var(--color-error);
   border-radius: 8px;
   background-color: var(--color-surface-3);
   border: 1px solid var(--color-border);
-  gap: 8px;
+  gap: 8px; */
   margin: 23px 8px 0 0;
-  color: var(--color-text-primary);
+  /* color: var(--color-text-primary);
 
   cursor: pointer;
   z-index: 1500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); */
 }
 
 .voice-chip.voice-recording {
@@ -494,7 +501,7 @@ color: var(--color-error);
   cursor: pointer;
 
   z-index: 1500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .task-date-chip-text {
@@ -1244,14 +1251,13 @@ margin-top: 0.5px;
   align-items: center;
   justify-content: center;
   padding: 48px 0;
-  gap: 16px;
-  opacity: 0.8;
+  gap: 8px;
 }
 
 .empty-state-logo {
+  filter: grayscale(100%);
   width: 56px;
   height: 56px;
-  color: var(--color-text-muted);
 }
 
 .empty-state-text {
